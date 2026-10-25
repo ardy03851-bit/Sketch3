@@ -466,6 +466,9 @@ function normalizeWeapon(def, id) {
   const d = W_DEFAULTS[type];
   const w = Object.assign({}, d, def);
   w.id = id; w.type = type; w.name = String(def.name || id).slice(0, 24);
+  // Accept both `automatic: true` and the common shorthand `auto: true` in weapon scripts.
+  const autoFlag = def.automatic ?? def.auto ?? d.automatic;
+  w.automatic = autoFlag === true || autoFlag === 1 || (typeof autoFlag === 'string' && /^(true|yes|1|automatic)$/i.test(autoFlag.trim()));
   for (const k of ['sprite', 'destruction', 'vfx', 'sound']) w[k] = Object.assign({}, d[k], def[k] || {});
   w.weight = Math.max(0, +w.weight || 0) || (def.weight === 0 ? 0 : 1);
   return w;
@@ -1397,9 +1400,17 @@ function readInput(me) {
   if (Input.jumpBtn) held = true;
   me.input.mx = Input.enabled ? mx : 0; me.input.jumpHeld = held; me.input.down = down; if (!Input.enabled) me.input.jump = false;
   me.aiming = false;
-  if (Input.aim && Input.aim.dragged) { me.aim = Math.atan2(Input.aim.dy, Input.aim.dx); me.aiming = true; me.face = Math.cos(me.aim) >= 0 ? 1 : -1;
-    const w = weaponOf(me); if (w.automatic && Math.hypot(Input.aim.dx, Input.aim.dy) > TL.R * .9) Input.attackQueued = me.aim; }
-  else if (!Input.usingTouch && Input.mouse.active) { const [wx, wy] = toWorld(Input.mouse.x, Input.mouse.y); me.aim = Math.atan2(wy - me.y, wx - me.x); me.aiming = true; me.face = Math.cos(me.aim) >= 0 ? 1 : -1; if (Input.mouse.down && weaponOf(me).automatic) Input.attackQueued = me.aim; }
+  if (Input.aim && Input.aim.dragged) {
+    me.aim = Math.atan2(Input.aim.dy, Input.aim.dx); me.aiming = true; me.face = Math.cos(me.aim) >= 0 ? 1 : -1;
+    // On touch, holding the aim stick in any deliberate direction continuously fires automatic guns.
+    const w = weaponOf(me);
+    if (w.type === 'gun' && w.automatic && Math.hypot(Input.aim.dx, Input.aim.dy) > 16) Input.attackQueued = me.aim;
+  }
+  else if (!Input.usingTouch && Input.mouse.active) {
+    const [wx, wy] = toWorld(Input.mouse.x, Input.mouse.y); me.aim = Math.atan2(wy - me.y, wx - me.x); me.aiming = true; me.face = Math.cos(me.aim) >= 0 ? 1 : -1;
+    // Re-queue every simulation frame while the mouse button is held; doAttack enforces fireRate.
+    const w = weaponOf(me); if (Input.mouse.down && w.type === 'gun' && w.automatic) Input.attackQueued = me.aim;
+  }
   else me.aim = me.face > 0 ? 0 : Math.PI;
   if (Input.attackQueued != null && Input.enabled) { doAttack(me, Input.attackQueued); }
   Input.attackQueued = null;
