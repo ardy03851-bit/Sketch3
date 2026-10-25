@@ -423,3 +423,13 @@ External scripts loaded at runtime from a CDN (unpkg, with jsDelivr as backup): 
 | "Could not reach host" | The host closed the tab, the iPad slept, or a strict network blocks WebRTC. Try another network (mobile hotspot works). |
 | No sound | Tap the screen once; iPad only allows audio after a touch. Check the silent switch. |
 | Laggy on an old iPad | Close other tabs. The game lowers its own quality automatically. |
+
+
+## Performance pass (Ground Hit + Bullet Trails)
+
+- Terrain damage now queues small, spatially separate dirty regions instead of merging distant hits into one oversized rebuild. Only three terrain patches are composited per animation frame; collision-grid changes remain immediate.
+- Hit-region terrain compositing uses reusable local canvases rather than full-map temporary layers. Full-resolution terrain art is retained.
+- Bullet tracers use a curved, multi-pass line with an ink edge, warm body, pale core, and small direction tick without allocating a new gradient for every bullet each frame.
+- Active particles are capped with single-particle eviction to avoid occasional large array-splice spikes.
+
+Syntax validation has been run; actual frame-time measurements and multiplayer playtesting are still required to confirm device-specific performance.

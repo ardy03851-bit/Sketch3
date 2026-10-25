@@ -566,11 +566,14 @@ function weaponImageData(w) {
 }
 
 /* ---------- 4. terrain (destructible bitmap) ---------- */
-const T = { grid: new Uint8Array(GW * GH), Q: 1.5, seed: 1, theme: THEMES[0], mask: null, tex: null, decal: null, out: null, tmp: null, tmp2: null, bg: null, dirty: null, craters: [] };
+const T = { grid: new Uint8Array(GW * GH), Q: 1.5, seed: 1, theme: THEMES[0], mask: null, tex: null, decal: null, out: null, tmp: null, tmp2: null, patchA: null, patchB: null, pctxA: null, pctxB: null, bg: null, dirty: [], craters: [] };
 function terrainInit(Q) {
   T.Q = Q; const w = W * Q, h = H * Q;
   for (const k of ['mask', 'tex', 'decal', 'out', 'tmp', 'tmp2']) T[k] = mkCanvas(w, h);
   T.mctx = T.mask.getContext('2d'); T.dctx = T.decal.getContext('2d'); T.octx = T.out.getContext('2d');
+  // Small reusable canvases prevent each crater from compositing through full-map-sized buffers.
+  T.patchA = mkCanvas(512, 512); T.patchB = mkCanvas(512, 512);
+  T.pctxA = T.patchA.getContext('2d'); T.pctxB = T.patchB.getContext('2d');
 }
 function islandPoly(R, x0, x1, top, depth, seed, flat = false) {
   const pts = []; const len = x1 - x0; const n = Math.max(6, Math.round(len / 18));
@@ -588,7 +591,7 @@ function islandPoly(R, x0, x1, top, depth, seed, flat = false) {
   return pts;
 }
 function generateMap(seed) {
-  const R = rng(seed); T.seed = seed; T.theme = THEMES[seed % THEMES.length]; T.craters = [];
+  const R = rng(seed); T.seed = seed; T.theme = THEMES[seed % THEMES.length]; T.craters = []; T.dirty = [];
   const shapes = [];
   const nIsl = 2 + (R() < .55 ? 1 : 0); const margin = 70 + R() * 50; const gapTot = (nIsl - 1) * (100 + R() * 50);
   const span = (W - margin * 2 - gapTot) / nIsl; let x = margin;
@@ -641,87 +644,145 @@ function buildBackground(R) {
   T.bg = { c, M, s };
   T.clouds = []; for (let i = 0; i < 5; i++) T.clouds.push({ x: R() * (W + 600) - 300, y: 60 + R() * 300, w: 140 + R() * 200, sp: 4 + R() * 8, seed: R() * 1000 | 0 });
 }
-function regionBlit(ctx, src, dx, dy, rx, ry, rw, rh) {
-  // Draw only the source pixels that can land inside the dirty rectangle.
-  // This avoids repeatedly resampling the entire 1600x1000 terrain for a tiny hit crater.
-  const sx = rx - dx, sy = ry - dy;
-  ctx.drawImage(src, sx, sy, rw, rh, rx, ry, rw, rh);
-}
-function inkDilate(ctx, src, r, color, rect) {
-  const { x: rx, y: ry, w: rw, h: rh } = rect;
+function inkDilateFull(ctx, src, r, color) {
   ctx.globalCompositeOperation = 'source-over';
-  for (let i = 0; i < 12; i++) {
-    const a = i / 12 * TAU, dx = Math.cos(a) * r, dy = Math.sin(a) * r * (Math.sin(a) > 0 ? 1.45 : .8);
-    regionBlit(ctx, src, dx, dy, rx, ry, rw, rh);
-  }
-  ctx.globalCompositeOperation = 'source-in';
-  ctx.fillStyle = color; ctx.fillRect(rx, ry, rw, rh);
-  ctx.globalCompositeOperation = 'source-over';
+  for (let i = 0; i < 12; i++) { const a = i / 12 * TAU, sy = Math.sin(a); ctx.drawImage(src, Math.cos(a) * r, sy * r * (sy > 0 ? 1.45 : .8)); }
+  ctx.globalCompositeOperation = 'source-in'; ctx.fillStyle = color; ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height); ctx.globalCompositeOperation = 'source-over';
 }
-function rebuildTerrain(rect) {
+function rebuildTerrainFull() {
+  // Used only on map generation. Preserve the original full-resolution art pass.
   const Q = T.Q, o = T.octx, t = T.tmp.getContext('2d'), t2 = T.tmp2.getContext('2d');
   const ctxs = [o, t, t2];
-  let rx = 0, ry = 0, rw = T.out.width, rh = T.out.height;
-  if (rect) {
-    const pad = 24;
-    rx = Math.max(0, Math.floor((rect.x0 - pad) * Q));
-    ry = Math.max(0, Math.floor((rect.y0 - pad) * Q));
-    const ex = Math.min(T.out.width, Math.ceil((rect.x1 + pad) * Q));
-    const ey = Math.min(T.out.height, Math.ceil((rect.y1 + pad) * Q));
-    rw = ex - rx; rh = ey - ry;
-    if (rw <= 0 || rh <= 0) return;
-  }
-  const region = { x: rx, y: ry, w: rw, h: rh };
-  for (const c of ctxs) {
-    c.save(); c.setTransform(1, 0, 0, 1, 0, 0);
-    c.beginPath(); c.rect(rx, ry, rw, rh); c.clip(); c.clearRect(rx, ry, rw, rh);
-  }
+  for (const c of ctxs) { c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, c.canvas.width, c.canvas.height); }
   const th = T.theme;
-  // 1) Cast shadow. Cropped blits preserve the full-resolution result without full-canvas resampling.
-  o.globalAlpha = .16;
-  regionBlit(t, T.mask, 9 * Q, 12 * Q, rx, ry, rw, rh);
-  t.globalCompositeOperation = 'source-in'; t.fillStyle = '#2a1e22'; t.fillRect(rx, ry, rw, rh);
-  t.globalCompositeOperation = 'source-over'; regionBlit(o, T.tmp, 0, 0, rx, ry, rw, rh);
-  o.globalAlpha = 1; t.clearRect(rx, ry, rw, rh);
-  // 2) Colour bleed.
-  regionBlit(t, T.mask, -4.5 * Q, -3.5 * Q, rx, ry, rw, rh);
-  t.globalCompositeOperation = 'source-in'; regionBlit(t, T.tex, 0, 0, rx, ry, rw, rh);
-  t.globalCompositeOperation = 'source-over';
-  o.globalAlpha = .55; regionBlit(o, T.tmp, 0, 0, rx, ry, rw, rh);
-  o.globalAlpha = 1; t.clearRect(rx, ry, rw, rh);
-  // 3) Ink outline.
-  inkDilate(t, T.mask, 3.1 * Q, INK, region);
-  regionBlit(o, T.tmp, 0, 0, rx, ry, rw, rh);
-  t.clearRect(rx, ry, rw, rh);
-  // 4) Interior: texture + decals.
-  regionBlit(t, T.mask, 0, 0, rx, ry, rw, rh);
-  t.globalCompositeOperation = 'source-in'; regionBlit(t, T.tex, 0, 0, rx, ry, rw, rh);
-  t.globalCompositeOperation = 'source-atop'; regionBlit(t, T.decal, 0, 0, rx, ry, rw, rh);
-  // Sunlit top band.
-  regionBlit(t2, T.mask, 0, 0, rx, ry, rw, rh);
-  t2.globalCompositeOperation = 'destination-out'; regionBlit(t2, T.mask, 0, 9 * Q, rx, ry, rw, rh);
-  t2.globalCompositeOperation = 'source-in'; t2.fillStyle = th.cap; t2.fillRect(rx, ry, rw, rh);
-  t2.globalCompositeOperation = 'source-over';
-  t.globalAlpha = .9; regionBlit(t, T.tmp2, 0, 0, rx, ry, rw, rh);
-  t2.clearRect(rx, ry, rw, rh);
-  // Thin bright rim.
-  regionBlit(t2, T.mask, 0, 0, rx, ry, rw, rh);
-  t2.globalCompositeOperation = 'destination-out'; regionBlit(t2, T.mask, 0, 2.2 * Q, rx, ry, rw, rh);
-  t2.globalCompositeOperation = 'source-in'; t2.fillStyle = '#fff6df'; t2.fillRect(rx, ry, rw, rh);
-  t2.globalCompositeOperation = 'source-over';
-  t.globalAlpha = .55; regionBlit(t, T.tmp2, 0, 0, rx, ry, rw, rh);
-  t2.clearRect(rx, ry, rw, rh);
-  // Occluded underside band.
-  regionBlit(t2, T.mask, 0, 0, rx, ry, rw, rh);
-  t2.globalCompositeOperation = 'destination-out'; regionBlit(t2, T.mask, 0, -14 * Q, rx, ry, rw, rh);
-  t2.globalCompositeOperation = 'source-in'; t2.fillStyle = '#1c1418'; t2.fillRect(rx, ry, rw, rh);
-  t2.globalCompositeOperation = 'source-over';
-  t.globalAlpha = .28; regionBlit(t, T.tmp2, 0, 0, rx, ry, rw, rh);
-  t.globalAlpha = 1; t.globalCompositeOperation = 'source-over';
-  regionBlit(o, T.tmp, 0, 0, rx, ry, rw, rh);
+  o.globalAlpha = .16; t.drawImage(T.mask, 9 * Q, 12 * Q); t.globalCompositeOperation = 'source-in'; t.fillStyle = '#2a1e22'; t.fillRect(0, 0, T.out.width, T.out.height); t.globalCompositeOperation = 'source-over'; o.drawImage(T.tmp, 0, 0); o.globalAlpha = 1; t.clearRect(0, 0, T.tmp.width, T.tmp.height);
+  t.drawImage(T.mask, -4.5 * Q, -3.5 * Q); t.globalCompositeOperation = 'source-in'; t.drawImage(T.tex, 0, 0); t.globalCompositeOperation = 'source-over';
+  o.globalAlpha = .55; o.drawImage(T.tmp, 0, 0); o.globalAlpha = 1; t.clearRect(0, 0, T.tmp.width, T.tmp.height);
+  inkDilateFull(t, T.mask, 3.1 * Q, INK); o.drawImage(T.tmp, 0, 0); t.clearRect(0, 0, T.tmp.width, T.tmp.height);
+  t.drawImage(T.mask, 0, 0); t.globalCompositeOperation = 'source-in'; t.drawImage(T.tex, 0, 0); t.globalCompositeOperation = 'source-atop'; t.drawImage(T.decal, 0, 0);
+  t2.drawImage(T.mask, 0, 0); t2.globalCompositeOperation = 'destination-out'; t2.drawImage(T.mask, 0, 9 * Q); t2.globalCompositeOperation = 'source-in'; t2.fillStyle = th.cap; t2.fillRect(0, 0, T.out.width, T.out.height); t2.globalCompositeOperation = 'source-over';
+  t.globalAlpha = .9; t.drawImage(T.tmp2, 0, 0); t2.clearRect(0, 0, T.tmp2.width, T.tmp2.height);
+  t2.drawImage(T.mask, 0, 0); t2.globalCompositeOperation = 'destination-out'; t2.drawImage(T.mask, 0, 2.2 * Q); t2.globalCompositeOperation = 'source-in'; t2.fillStyle = '#fff6df'; t2.fillRect(0, 0, T.out.width, T.out.height); t2.globalCompositeOperation = 'source-over';
+  t.globalAlpha = .55; t.drawImage(T.tmp2, 0, 0); t2.clearRect(0, 0, T.tmp2.width, T.tmp2.height);
+  t2.drawImage(T.mask, 0, 0); t2.globalCompositeOperation = 'destination-out'; t2.drawImage(T.mask, 0, -14 * Q); t2.globalCompositeOperation = 'source-in'; t2.fillStyle = '#1c1418'; t2.fillRect(0, 0, T.out.width, T.out.height); t2.globalCompositeOperation = 'source-over';
+  t.globalAlpha = .28; t.drawImage(T.tmp2, 0, 0); t.globalAlpha = 1; t.globalCompositeOperation = 'source-over'; o.drawImage(T.tmp, 0, 0);
   for (const c of ctxs) c.restore();
 }
-function markDirty(x0, y0, x1, y1) { const d = T.dirty; if (!d) T.dirty = { x0, y0, x1, y1 }; else { d.x0 = Math.min(d.x0, x0); d.y0 = Math.min(d.y0, y0); d.x1 = Math.max(d.x1, x1); d.y1 = Math.max(d.y1, y1); } }
+function growPatchCanvases(w, h) {
+  for (const key of ['patchA', 'patchB']) {
+    const cv = T[key];
+    if (cv.width < w || cv.height < h) { cv.width = Math.max(cv.width, w); cv.height = Math.max(cv.height, h); }
+  }
+  T.pctxA = T.patchA.getContext('2d'); T.pctxB = T.patchB.getContext('2d');
+}
+function clearPatch(c, w, h) {
+  c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; c.clearRect(0, 0, w, h);
+}
+// Copy a source rectangle pixel-for-pixel into a patch, handling map edges without stretching.
+function cropInto(ctx, src, sx, sy, w, h) {
+  let dx = 0, dy = 0, sw = w, sh = h;
+  if (sx < 0) { dx = -sx; sw -= dx; sx = 0; }
+  if (sy < 0) { dy = -sy; sh -= dy; sy = 0; }
+  if (sx + sw > src.width) sw = src.width - sx;
+  if (sy + sh > src.height) sh = src.height - sy;
+  if (sw > 0 && sh > 0) ctx.drawImage(src, sx, sy, sw, sh, dx, dy, sw, sh);
+}
+function shiftedMask(ctx, shiftX, shiftY, rx, ry, rw, rh) {
+  cropInto(ctx, T.mask, rx - shiftX, ry - shiftY, rw, rh);
+}
+function rebuildTerrainRegion(rect) {
+  const Q = T.Q, o = T.octx, pad = 24;
+  const rx = clamp(Math.floor((rect.x0 - pad) * Q), 0, T.out.width);
+  const ry = clamp(Math.floor((rect.y0 - pad) * Q), 0, T.out.height);
+  const ex = clamp(Math.ceil((rect.x1 + pad) * Q), 0, T.out.width);
+  const ey = clamp(Math.ceil((rect.y1 + pad) * Q), 0, T.out.height);
+  const rw = ex - rx, rh = ey - ry;
+  if (rw <= 0 || rh <= 0) return;
+  growPatchCanvases(rw, rh);
+  const a = T.pctxA, b = T.pctxB, th = T.theme;
+
+  // Clear only the affected pixels of the visible terrain; no full-map layer copies occur here.
+  o.save(); o.setTransform(1, 0, 0, 1, 0, 0); o.globalAlpha = 1; o.globalCompositeOperation = 'source-over'; o.clearRect(rx, ry, rw, rh);
+
+  // Shadow pass.
+  clearPatch(a, rw, rh); shiftedMask(a, 9 * Q, 12 * Q, rx, ry, rw, rh);
+  a.globalCompositeOperation = 'source-in'; a.fillStyle = '#2a1e22'; a.fillRect(0, 0, rw, rh); a.globalCompositeOperation = 'source-over';
+  o.globalAlpha = .16; o.drawImage(T.patchA, 0, 0, rw, rh, rx, ry, rw, rh);
+
+  // Slightly misregistered colour bleed.
+  clearPatch(a, rw, rh); shiftedMask(a, -4.5 * Q, -3.5 * Q, rx, ry, rw, rh);
+  a.globalCompositeOperation = 'source-in'; cropInto(a, T.tex, rx, ry, rw, rh); a.globalCompositeOperation = 'source-over';
+  o.globalAlpha = .55; o.drawImage(T.patchA, 0, 0, rw, rh, rx, ry, rw, rh);
+
+  // Thick hand-ink outline, composed only inside the small patch.
+  clearPatch(a, rw, rh);
+  for (let i = 0; i < 12; i++) { const ang = i / 12 * TAU, sy = Math.sin(ang); shiftedMask(a, Math.cos(ang) * 3.1 * Q, sy * 3.1 * Q * (sy > 0 ? 1.45 : .8), rx, ry, rw, rh); }
+  a.globalCompositeOperation = 'source-in'; a.fillStyle = INK; a.fillRect(0, 0, rw, rh); a.globalCompositeOperation = 'source-over';
+  o.globalAlpha = 1; o.drawImage(T.patchA, 0, 0, rw, rh, rx, ry, rw, rh);
+
+  // Terrain fill + scorch/decal layer.
+  clearPatch(a, rw, rh); cropInto(a, T.mask, rx, ry, rw, rh);
+  a.globalCompositeOperation = 'source-in'; cropInto(a, T.tex, rx, ry, rw, rh);
+  a.globalCompositeOperation = 'source-atop'; cropInto(a, T.decal, rx, ry, rw, rh); a.globalCompositeOperation = 'source-over';
+  o.drawImage(T.patchA, 0, 0, rw, rh, rx, ry, rw, rh);
+
+  // Sunlit cap band.
+  clearPatch(b, rw, rh); cropInto(b, T.mask, rx, ry, rw, rh);
+  b.globalCompositeOperation = 'destination-out'; cropInto(b, T.mask, rx, ry - 9 * Q, rw, rh);
+  b.globalCompositeOperation = 'source-in'; b.fillStyle = th.cap; b.fillRect(0, 0, rw, rh); b.globalCompositeOperation = 'source-over';
+  o.globalAlpha = .9; o.drawImage(T.patchB, 0, 0, rw, rh, rx, ry, rw, rh);
+
+  // Bright top rim.
+  clearPatch(b, rw, rh); cropInto(b, T.mask, rx, ry, rw, rh);
+  b.globalCompositeOperation = 'destination-out'; cropInto(b, T.mask, rx, ry - 2.2 * Q, rw, rh);
+  b.globalCompositeOperation = 'source-in'; b.fillStyle = '#fff6df'; b.fillRect(0, 0, rw, rh); b.globalCompositeOperation = 'source-over';
+  o.globalAlpha = .55; o.drawImage(T.patchB, 0, 0, rw, rh, rx, ry, rw, rh);
+
+  // Dark occluded underside.
+  clearPatch(b, rw, rh); cropInto(b, T.mask, rx, ry, rw, rh);
+  b.globalCompositeOperation = 'destination-out'; cropInto(b, T.mask, rx, ry + 14 * Q, rw, rh);
+  b.globalCompositeOperation = 'source-in'; b.fillStyle = '#1c1418'; b.fillRect(0, 0, rw, rh); b.globalCompositeOperation = 'source-over';
+  o.globalAlpha = .28; o.drawImage(T.patchB, 0, 0, rw, rh, rx, ry, rw, rh);
+  o.globalAlpha = 1; o.globalCompositeOperation = 'source-over'; o.restore();
+}
+function rebuildTerrain(rect) {
+  if (!rect) { rebuildTerrainFull(); return; }
+  rebuildTerrainRegion(rect);
+}
+function markDirty(x0, y0, x1, y1) {
+  if (![x0, y0, x1, y1].every(Number.isFinite)) return;
+  if (!Array.isArray(T.dirty)) T.dirty = [];
+  let r = { x0: Math.min(x0, x1), y0: Math.min(y0, y1), x1: Math.max(x0, x1), y1: Math.max(y0, y1) };
+  // Merge only touching/overlapping areas. Distant hits must never turn into a full-map rebuild.
+  for (let i = 0; i < T.dirty.length;) {
+    const d = T.dirty[i], gap = 18;
+    if (r.x0 <= d.x1 + gap && r.x1 + gap >= d.x0 && r.y0 <= d.y1 + gap && r.y1 + gap >= d.y0) {
+      r = { x0: Math.min(r.x0, d.x0), y0: Math.min(r.y0, d.y0), x1: Math.max(r.x1, d.x1), y1: Math.max(r.y1, d.y1) };
+      T.dirty.splice(i, 1); i = 0;
+    } else i++;
+  }
+  T.dirty.push(r);
+  // Hard cap pathological bursts without collapsing the entire map into one dirty rectangle.
+  while (T.dirty.length > 24) {
+    let bi = 0, bj = 1, best = Infinity;
+    for (let i = 0; i < T.dirty.length; i++) for (let j = i + 1; j < T.dirty.length; j++) {
+      const a = T.dirty[i], b = T.dirty[j];
+      const ux = Math.max(a.x1, b.x1) - Math.min(a.x0, b.x0), uy = Math.max(a.y1, b.y1) - Math.min(a.y0, b.y0);
+      const area = ux * uy, own = Math.max(0, a.x1-a.x0) * Math.max(0, a.y1-a.y0) + Math.max(0, b.x1-b.x0) * Math.max(0, b.y1-b.y0);
+      const penalty = area - own;
+      if (penalty < best) { best = penalty; bi = i; bj = j; }
+    }
+    const a = T.dirty[bi], b = T.dirty[bj];
+    T.dirty[bi] = { x0: Math.min(a.x0,b.x0), y0: Math.min(a.y0,b.y0), x1: Math.max(a.x1,b.x1), y1: Math.max(a.y1,b.y1) };
+    T.dirty.splice(bj, 1);
+  }
+}
+function processDirtyTerrain(limit = 3) {
+  let count = 0;
+  while (Array.isArray(T.dirty) && T.dirty.length && count < limit) {
+    rebuildTerrain(T.dirty.shift()); count++;
+  }
+}
 function craterRadii(jag, s) { const R = rng(s), n = 26, raw = []; for (let i = 0; i < n; i++) raw.push(1 + jag * (R() - .5) * .9 + jag * .25 * Math.sin(i * 1.7 + R() * 6)); const out = raw.map((v, i) => (raw[(i + n - 1) % n] + v * 2 + raw[(i + 1) % n]) / 4); return out; }
 function carveCrater(c) {
   const { x, y, r, j = .35, s = 1, sc = 0, dn = false } = c; if (r <= 0) return;
@@ -879,8 +940,8 @@ function updateBullets(dt) {
 const softSprites = {};
 function softSprite(color) { if (softSprites[color]) return softSprites[color]; const c = mkCanvas(64, 64), x = c.getContext('2d'); const g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, color); g.addColorStop(.55, color.replace(/[\d.]+\)$/, m => (parseFloat(m) * .45) + ')')); g.addColorStop(1, color.replace(/[\d.]+\)$/, '0)')); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return softSprites[color] = c; }
 const FX = {
-  parts: [], lights: [], max: 1100,
-  add(p) { if (this.parts.length > this.max) this.parts.splice(0, 80); this.parts.push(p); return p; },
+  parts: [], lights: [], max: 680,
+  add(p) { if (this.parts.length >= this.max) { let drop = this.parts.findIndex(q => q.k === 'smoke' || q.k === 'spark' || q.k === 'ink'); if (drop < 0) drop = 0; this.parts[drop] = p; return p; } this.parts.push(p); return p; },
   light(x, y, r, color, life = .12, int = 1) { if (!color) return; this.lights.push({ x, y, r, color, life, max: life, int }); },
   smoke(x, y, n = 3, size = 16, color = 'rgba(210,200,190,.55)', vx = 0, vy = -30) { for (let i = 0; i < n; i++) this.add({ k: 'smoke', x: x + (Math.random() - .5) * size * .6, y: y + (Math.random() - .5) * size * .6, vx: vx + (Math.random() - .5) * 60, vy: vy - Math.random() * 30, r: size * (.6 + Math.random() * .6), gr: size * (1.4 + Math.random()), life: .9 + Math.random() * .8, t: 0, color, rot: Math.random() * TAU }); },
   dustPuff(x, y, n = 6, s = 1) { const col = T.theme ? rgba(T.theme.cap, .55) : 'rgba(220,200,170,.55)'; for (let i = 0; i < n; i++) { const d = i % 2 ? 1 : -1; this.add({ k: 'smoke', x: x + d * Math.random() * 10, y: y - 3, vx: d * (60 + Math.random() * 140) * s, vy: -Math.random() * 50 * s, r: 7 * s, gr: 16 * s, life: .45 + Math.random() * .3, t: 0, color: col, rot: 0, drag: 4 }); } },
@@ -905,8 +966,8 @@ const FX = {
         case 'ink': p.vy += GRAV * .8 * dt; p.x += p.vx * dt; p.y += p.vy * dt; if (solidAt(p.x, p.y)) { stainDecal(p.x, p.y, p.r * 1.5, p.color, .75); p.t = p.life; } break;
       }
     }
-    // settled debris loses support when terrain beneath is carved
-    for (const p of this.parts) if (p.rest && !solidAt(p.x, p.y + (p.s || 2) + 2)) p.rest = false;
+    // Settled debris loses support when terrain beneath is carved. Ignore other particle types.
+    for (const p of this.parts) if (p.rest && p.k === 'debris' && !solidAt(p.x, p.y + (p.s || 2) + 2)) p.rest = false;
     this.parts = this.parts.filter(p => p.t < p.life);
     for (const l of this.lights) l.life -= dt; this.lights = this.lights.filter(l => l.life > 0);
   }
@@ -1067,15 +1128,25 @@ function drawAdditive(c) {
   c.globalAlpha = 1; c.restore();
 }
 function drawBullets(c) {
+  // No per-frame gradients or per-bullet save/restore: the trail is a compact, curved polyline.
+  c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
   for (const b of G.bullets) {
-    const w = Weapons.byId[b.wid]; const col = (w && w.vfx.tracer) || '#ffd9a0'; const tr = b.trail; if (tr.length < 2) continue; const f = b.dead ? 1 - b.fade / .12 : 1;
-    c.save(); c.globalAlpha = f; c.lineCap = 'round';
-    const [x0, y0] = tr[0], [x1, y1] = tr[tr.length - 1]; const g = c.createLinearGradient(x0, y0, x1, y1); g.addColorStop(0, rgba(col, 0)); g.addColorStop(1, rgba(col, .95));
-    c.strokeStyle = 'rgba(31,28,36,.35)'; c.lineWidth = 4.2; c.beginPath(); c.moveTo(x0, y0 + 1); c.lineTo(x1, y1 + 1); c.stroke();
-    c.strokeStyle = g; c.lineWidth = 3; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke();
-    if (!b.dead) { c.fillStyle = '#fffaf0'; c.beginPath(); c.arc(x1, y1, 2.4, 0, TAU); c.fill(); }
-    c.restore();
+    const tr = b.trail; if (!tr || tr.length < 2) continue;
+    const f = b.dead ? clamp(1 - b.fade / .12, 0, 1) : 1; if (f <= 0) continue;
+    const w = Weapons.byId[b.wid], col = (w && w.vfx && w.vfx.tracer) || '#ffd9a0';
+    c.beginPath(); c.moveTo(tr[0][0], tr[0][1]);
+    for (let i = 1; i < tr.length; i++) c.lineTo(tr[i][0], tr[i][1]);
+    // Ink edge, warm tracer body, then a thin paper-hot core.
+    c.globalAlpha = f * .72; c.strokeStyle = 'rgba(31,28,36,.42)'; c.lineWidth = 5.2; c.stroke();
+    c.globalAlpha = f * .94; c.strokeStyle = col; c.lineWidth = 3.2; c.stroke();
+    c.globalAlpha = f * .68; c.strokeStyle = '#fff4d9'; c.lineWidth = 1.05; c.stroke();
+    const last = tr[tr.length - 1], prev = tr[tr.length - 2];
+    const dx = last[0] - prev[0], dy = last[1] - prev[1], len = Math.hypot(dx, dy) || 1;
+    c.globalAlpha = f * .95; c.fillStyle = '#fff9e9'; c.beginPath(); c.arc(last[0], last[1], b.dead ? 1.8 : 2.35, 0, TAU); c.fill();
+    // Tiny direction tick adds a readable sense of speed with only one extra segment.
+    if (!b.dead) { c.globalAlpha = f * .52; c.strokeStyle = col; c.lineWidth = 1.25; c.beginPath(); c.moveTo(last[0] - dx / len * 5, last[1] - dy / len * 5); c.lineTo(last[0] - dx / len * 9, last[1] - dy / len * 9); c.stroke(); }
   }
+  c.globalAlpha = 1; c.restore();
 }
 function drawClouds(c, t) {
   for (const cl of T.clouds || []) { const x = ((cl.x + t * cl.sp) % (W + 800)) - 400; c.save(); c.globalAlpha = .55; const pts = []; for (let i = 0; i < 14; i++) { const a = i / 14 * TAU; const r = 1 + (hash(cl.seed, i) - .5) * .35; pts.push([x + Math.cos(a) * cl.w * .5 * r, cl.y + Math.sin(a) * cl.w * .16 * r * (Math.sin(a) > 0 ? .6 : 1.1)]); }
@@ -1702,13 +1773,13 @@ function tick(dt) {
 function frame(ts) {
   const dt = Math.min(.1, (ts - lastFrame) / 1000); lastFrame = ts;
   if (!manual) { acc += dt; let n = 0; while (acc >= STEP && n < 5) { tick(STEP); acc -= STEP; n++; } if (n >= 5) acc = 0; }
-  if (T.dirty) { rebuildTerrain(T.dirty); T.dirty = null; }
+  processDirtyTerrain(3);
   render(now());
   hudT += dt; if (hudT > .1) { hudT = 0; UI.tickHud(); }
   fpsT += dt; fpsN++; if (fpsT > 2) { const fps = fpsN / fpsT; fpsT = 0; fpsN = 0; R8.fpsAvg = fps; if (fps < 42 && R8.quality > .6) { R8.quality -= .15; resize(); } }
   requestAnimationFrame(frame);
 }
-window.advanceTime = ms => { manual = true; const n = Math.max(1, Math.round(ms / (1000 / 60))); for (let i = 0; i < n; i++) tick(STEP); if (T.dirty) { rebuildTerrain(T.dirty); T.dirty = null; } render(now()); };
+window.advanceTime = ms => { manual = true; const n = Math.max(1, Math.round(ms / (1000 / 60))); for (let i = 0; i < n; i++) tick(STEP); while (T.dirty && T.dirty.length) processDirtyTerrain(32); render(now()); };
 window.render_game_to_text = () => JSON.stringify({
   coords: 'world 1600x1000, origin top-left, +y down', mode: G.mode, screen: UI.cur, host: G.isHost, offline: G.offline, demo: G.demo, code: G.code, phase: G.phase, round: G.round,
   me: (() => { const p = G.players.get(G.myId); return p ? { x: Math.round(p.x), y: Math.round(p.y), vx: Math.round(p.vx), vy: Math.round(p.vy), hp: p.hp, alive: p.alive, weapon: p.wid, ammo: p.ammo, grounded: p.grounded, score: p.score } : null; })(),
