@@ -1255,6 +1255,18 @@ function drawBullets(c) {
     const tr = b.trail; if (!tr || tr.length < 2) continue;
     const f = b.dead ? clamp(1 - b.fade / .12, 0, 1) : 1; if (f <= 0) continue;
     const w = Weapons.byId[b.wid], col = (w && w.vfx && w.vfx.tracer) || '#ffd9a0';
+    // Optional weapon-art projectile: reuse that weapon's PNG, drawn much smaller.
+    // Because the image is already part of the weapon definition, it also works in multiplayer.
+    if (w && w.projectileSprite && w.img) {
+      const last = tr[tr.length - 1], prev = tr[tr.length - 2];
+      const dx = last[0] - prev[0], dy = last[1] - prev[1];
+      const angle = Math.atan2(dy, dx);
+      const size = Math.max(6, Number(w.projectileSize) || 16);
+      c.save(); c.globalAlpha = f; c.translate(last[0], last[1]); c.rotate(angle);
+      c.drawImage(w.img, -size * 0.5, -size * 0.5, size, size);
+      c.restore();
+      continue;
+    }
     c.beginPath(); c.moveTo(tr[0][0], tr[0][1]);
     for (let i = 1; i < tr.length; i++) c.lineTo(tr[i][0], tr[i][1]);
     // Ink edge, warm tracer body, then a thin paper-hot core.
