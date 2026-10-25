@@ -16,7 +16,7 @@ Weapon({
 
   // ── firing ──────────────────────────────────────────────
   fireRate: 2.6,            // shots per second
-  ammo: 6,                  // shots per round (0 = infinite). When empty you shove with your fists.
+  ammo: 106,                  // shots per round (0 = infinite). When empty you shove with your fists.
   automatic: false,         // hold to keep firing
   bullets: 1,               // pellets per shot (shotgun = 6+)
   spread: 0.025,            // radians of random spread
