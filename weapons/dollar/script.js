@@ -11,8 +11,8 @@ Weapon({
   headshot: 1.35,
 
   fireRate: 3.2,
-  ammo: 24,
-  automatic: false,
+  ammo: 124,
+  automatic: true,
   bullets: 1,
   spread: 0.012,
   bulletSpeed: 1850,
