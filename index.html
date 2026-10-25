@@ -641,37 +641,84 @@ function buildBackground(R) {
   T.bg = { c, M, s };
   T.clouds = []; for (let i = 0; i < 5; i++) T.clouds.push({ x: R() * (W + 600) - 300, y: 60 + R() * 300, w: 140 + R() * 200, sp: 4 + R() * 8, seed: R() * 1000 | 0 });
 }
-function inkDilate(ctx, src, r, color) {
+function regionBlit(ctx, src, dx, dy, rx, ry, rw, rh) {
+  // Draw only the source pixels that can land inside the dirty rectangle.
+  // This avoids repeatedly resampling the entire 1600x1000 terrain for a tiny hit crater.
+  const sx = rx - dx, sy = ry - dy;
+  ctx.drawImage(src, sx, sy, rw, rh, rx, ry, rw, rh);
+}
+function inkDilate(ctx, src, r, color, rect) {
+  const { x: rx, y: ry, w: rw, h: rh } = rect;
   ctx.globalCompositeOperation = 'source-over';
-  for (let i = 0; i < 12; i++) { const a = i / 12 * TAU; const sy = Math.sin(a); ctx.drawImage(src, Math.cos(a) * r, sy * r * (sy > 0 ? 1.45 : .8)); }
-  ctx.globalCompositeOperation = 'source-in'; ctx.fillStyle = color; ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height); ctx.globalCompositeOperation = 'source-over';
+  for (let i = 0; i < 12; i++) {
+    const a = i / 12 * TAU, dx = Math.cos(a) * r, dy = Math.sin(a) * r * (Math.sin(a) > 0 ? 1.45 : .8);
+    regionBlit(ctx, src, dx, dy, rx, ry, rw, rh);
+  }
+  ctx.globalCompositeOperation = 'source-in';
+  ctx.fillStyle = color; ctx.fillRect(rx, ry, rw, rh);
+  ctx.globalCompositeOperation = 'source-over';
 }
 function rebuildTerrain(rect) {
   const Q = T.Q, o = T.octx, t = T.tmp.getContext('2d'), t2 = T.tmp2.getContext('2d');
   const ctxs = [o, t, t2];
   let rx = 0, ry = 0, rw = T.out.width, rh = T.out.height;
-  if (rect) { const pad = 24; rx = Math.max(0, Math.floor((rect.x0 - pad) * Q)); ry = Math.max(0, Math.floor((rect.y0 - pad) * Q)); rw = Math.min(T.out.width, Math.ceil((rect.x1 + pad) * Q)) - rx; rh = Math.min(T.out.height, Math.ceil((rect.y1 + pad) * Q)) - ry; if (rw <= 0 || rh <= 0) return; }
-  for (const c of ctxs) { c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.beginPath(); c.rect(rx, ry, rw, rh); c.clip(); c.clearRect(rx, ry, rw, rh); }
+  if (rect) {
+    const pad = 24;
+    rx = Math.max(0, Math.floor((rect.x0 - pad) * Q));
+    ry = Math.max(0, Math.floor((rect.y0 - pad) * Q));
+    const ex = Math.min(T.out.width, Math.ceil((rect.x1 + pad) * Q));
+    const ey = Math.min(T.out.height, Math.ceil((rect.y1 + pad) * Q));
+    rw = ex - rx; rh = ey - ry;
+    if (rw <= 0 || rh <= 0) return;
+  }
+  const region = { x: rx, y: ry, w: rw, h: rh };
+  for (const c of ctxs) {
+    c.save(); c.setTransform(1, 0, 0, 1, 0, 0);
+    c.beginPath(); c.rect(rx, ry, rw, rh); c.clip(); c.clearRect(rx, ry, rw, rh);
+  }
   const th = T.theme;
-  // 1 cast shadow on the backdrop
-  o.globalAlpha = .16; t.drawImage(T.mask, 9 * Q, 12 * Q); t.globalCompositeOperation = 'source-in'; t.fillStyle = '#2a1e22'; t.fillRect(rx, ry, rw, rh); t.globalCompositeOperation = 'source-over'; o.drawImage(T.tmp, 0, 0); o.globalAlpha = 1; t.clearRect(rx, ry, rw, rh);
-  // 2 colour bleed (misregistered fill poking out of the line)
-  t.drawImage(T.mask, -4.5 * Q, -3.5 * Q); t.globalCompositeOperation = 'source-in'; t.drawImage(T.tex, 0, 0); t.globalCompositeOperation = 'source-over';
-  o.globalAlpha = .55; o.drawImage(T.tmp, 0, 0); o.globalAlpha = 1; t.clearRect(rx, ry, rw, rh);
-  // 3 ink outline (dilated silhouette, heavier underneath like a brush)
-  inkDilate(t, T.mask, 3.1 * Q, INK); o.drawImage(T.tmp, 0, 0); t.clearRect(rx, ry, rw, rh);
-  // 4 interior: texture + decals + light bands
-  t.drawImage(T.mask, 0, 0); t.globalCompositeOperation = 'source-in'; t.drawImage(T.tex, 0, 0); t.globalCompositeOperation = 'source-atop'; t.drawImage(T.decal, 0, 0);
-  // sunlit top band
-  t2.drawImage(T.mask, 0, 0); t2.globalCompositeOperation = 'destination-out'; t2.drawImage(T.mask, 0, 9 * Q); t2.globalCompositeOperation = 'source-in'; t2.fillStyle = th.cap; t2.fillRect(rx, ry, rw, rh); t2.globalCompositeOperation = 'source-over';
-  t.globalAlpha = .9; t.drawImage(T.tmp2, 0, 0); t2.clearRect(rx, ry, rw, rh);
-  // thin bright rim on the very top
-  t2.drawImage(T.mask, 0, 0); t2.globalCompositeOperation = 'destination-out'; t2.drawImage(T.mask, 0, 2.2 * Q); t2.globalCompositeOperation = 'source-in'; t2.fillStyle = '#fff6df'; t2.fillRect(rx, ry, rw, rh); t2.globalCompositeOperation = 'source-over';
-  t.globalAlpha = .55; t.drawImage(T.tmp2, 0, 0); t2.clearRect(rx, ry, rw, rh);
-  // occluded underside band
-  t2.drawImage(T.mask, 0, 0); t2.globalCompositeOperation = 'destination-out'; t2.drawImage(T.mask, 0, -14 * Q); t2.globalCompositeOperation = 'source-in'; t2.fillStyle = '#1c1418'; t2.fillRect(rx, ry, rw, rh); t2.globalCompositeOperation = 'source-over';
-  t.globalAlpha = .28; t.drawImage(T.tmp2, 0, 0); t.globalAlpha = 1; t.globalCompositeOperation = 'source-over';
-  o.drawImage(T.tmp, 0, 0);
+  // 1) Cast shadow. Cropped blits preserve the full-resolution result without full-canvas resampling.
+  o.globalAlpha = .16;
+  regionBlit(t, T.mask, 9 * Q, 12 * Q, rx, ry, rw, rh);
+  t.globalCompositeOperation = 'source-in'; t.fillStyle = '#2a1e22'; t.fillRect(rx, ry, rw, rh);
+  t.globalCompositeOperation = 'source-over'; regionBlit(o, T.tmp, 0, 0, rx, ry, rw, rh);
+  o.globalAlpha = 1; t.clearRect(rx, ry, rw, rh);
+  // 2) Colour bleed.
+  regionBlit(t, T.mask, -4.5 * Q, -3.5 * Q, rx, ry, rw, rh);
+  t.globalCompositeOperation = 'source-in'; regionBlit(t, T.tex, 0, 0, rx, ry, rw, rh);
+  t.globalCompositeOperation = 'source-over';
+  o.globalAlpha = .55; regionBlit(o, T.tmp, 0, 0, rx, ry, rw, rh);
+  o.globalAlpha = 1; t.clearRect(rx, ry, rw, rh);
+  // 3) Ink outline.
+  inkDilate(t, T.mask, 3.1 * Q, INK, region);
+  regionBlit(o, T.tmp, 0, 0, rx, ry, rw, rh);
+  t.clearRect(rx, ry, rw, rh);
+  // 4) Interior: texture + decals.
+  regionBlit(t, T.mask, 0, 0, rx, ry, rw, rh);
+  t.globalCompositeOperation = 'source-in'; regionBlit(t, T.tex, 0, 0, rx, ry, rw, rh);
+  t.globalCompositeOperation = 'source-atop'; regionBlit(t, T.decal, 0, 0, rx, ry, rw, rh);
+  // Sunlit top band.
+  regionBlit(t2, T.mask, 0, 0, rx, ry, rw, rh);
+  t2.globalCompositeOperation = 'destination-out'; regionBlit(t2, T.mask, 0, 9 * Q, rx, ry, rw, rh);
+  t2.globalCompositeOperation = 'source-in'; t2.fillStyle = th.cap; t2.fillRect(rx, ry, rw, rh);
+  t2.globalCompositeOperation = 'source-over';
+  t.globalAlpha = .9; regionBlit(t, T.tmp2, 0, 0, rx, ry, rw, rh);
+  t2.clearRect(rx, ry, rw, rh);
+  // Thin bright rim.
+  regionBlit(t2, T.mask, 0, 0, rx, ry, rw, rh);
+  t2.globalCompositeOperation = 'destination-out'; regionBlit(t2, T.mask, 0, 2.2 * Q, rx, ry, rw, rh);
+  t2.globalCompositeOperation = 'source-in'; t2.fillStyle = '#fff6df'; t2.fillRect(rx, ry, rw, rh);
+  t2.globalCompositeOperation = 'source-over';
+  t.globalAlpha = .55; regionBlit(t, T.tmp2, 0, 0, rx, ry, rw, rh);
+  t2.clearRect(rx, ry, rw, rh);
+  // Occluded underside band.
+  regionBlit(t2, T.mask, 0, 0, rx, ry, rw, rh);
+  t2.globalCompositeOperation = 'destination-out'; regionBlit(t2, T.mask, 0, -14 * Q, rx, ry, rw, rh);
+  t2.globalCompositeOperation = 'source-in'; t2.fillStyle = '#1c1418'; t2.fillRect(rx, ry, rw, rh);
+  t2.globalCompositeOperation = 'source-over';
+  t.globalAlpha = .28; regionBlit(t, T.tmp2, 0, 0, rx, ry, rw, rh);
+  t.globalAlpha = 1; t.globalCompositeOperation = 'source-over';
+  regionBlit(o, T.tmp, 0, 0, rx, ry, rw, rh);
   for (const c of ctxs) c.restore();
 }
 function markDirty(x0, y0, x1, y1) { const d = T.dirty; if (!d) T.dirty = { x0, y0, x1, y1 }; else { d.x0 = Math.min(d.x0, x0); d.y0 = Math.min(d.y0, y0); d.x1 = Math.max(d.x1, x1); d.y1 = Math.max(d.y1, y1); } }
