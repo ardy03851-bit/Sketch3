@@ -4,7 +4,7 @@
 Weapon({
   name: "Katana",
   type: "melee",
-  weight: 1,
+  weight: 0.7,
 
   // DAMAGE & IMPACT
   damage: 48,
