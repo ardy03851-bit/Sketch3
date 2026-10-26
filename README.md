@@ -8,7 +8,9 @@ The whole game is three things:
 ```
 inkbrawl/
 ├── README.md        ← this file
-├── index.html       ← the entire game (engine, UI, netcode, art, sound)
+├── index.html       ← the core game (engine, UI, netcode, art, sound)
+├── expansion.js     ← biomes, water, weather, props, new weapon mechanics, big-map mode, quality scaling
+├── tools/           ← make-manifest.py (for hosts without folder listings)
 └── weapons/         ← one folder per weapon, picked up automatically
     ├── gun/
     │   ├── gun.png
@@ -39,6 +41,7 @@ You never edit `index.html` to add a weapon. Drop a new folder into `weapons/` a
 13. [UI and icons](#ui-and-icons)
 14. [How the code is laid out](#how-the-code-is-laid-out)
 15. [Troubleshooting](#troubleshooting)
+16. [Expansion: worlds, modes and weapon mechanics](#expansion-worlds-modes-and-weapon-mechanics)
 
 ---
 
@@ -433,3 +436,72 @@ External scripts loaded at runtime from a CDN (unpkg, with jsDelivr as backup): 
 - Active particles are capped with single-particle eviction to avoid occasional large array-splice spikes.
 
 Syntax validation has been run; actual frame-time measurements and multiplayer playtesting are still required to confirm device-specific performance.
+
+
+---
+
+## Expansion: worlds, modes and weapon mechanics
+
+Everything in this section lives in `expansion.js`, loaded after the core script. It replaces or wraps core functions, so `index.html` stays readable.
+
+### Modes
+
+| Mode | Map | Notes |
+|---|---|---|
+| Classic arena | 1600 × 1000, whole map on screen | Original rules, 60 s rounds |
+| The Big Wilds (expedition) | 3600 × 1600, follow camera | 150 s rounds, minimap, off-screen enemy arrows, supply crates, a storm wall that closes in from both sides |
+
+Pick the mode and atmosphere in *Practice vs bots* or when hosting a room. Online rooms send the mode and biome to every player.
+
+### Atmospheres (16)
+
+Dust Bowl, Slate Cliffs, Moss Garden, Ember Hollow, Rainy Meadow, Thunderstorm Ridge, Tropical Islands, Sunset Lagoon, Pine Forest, Autumn Woods, Snowfield, Night Swamp, Volcano, Sandstorm Canyon, Cherry Blossom, Midnight Harbor.
+
+Each has its own terrain layout (floating islands, rolling ground, or islands in the sea), parallax backdrop, props and weather:
+
+- **Water** — puddles, ponds, swamp pools and open sea. The surface is a spring simulation: bullets, explosions, players and rain all make waves and splashes. Craters under a pool drain it. Players swim (buoyancy, slow fall, bubbles).
+- **Lava** — volcano pools hurt and set you on fire.
+- **Weather** — rain with ripples, thunderstorms with lightning that strikes the ground (and players), snow, sandstorms, falling leaves and petals, fireflies, embers, ash, fog.
+- **Props** — oaks, pines, palms, autumn and cherry trees, cacti, bushes, reeds, bounce mushrooms, lamps, crates and explosive barrels. Trees shed leaves when hit, catch fire from fire weapons and fall when burnt through or undercut. Barrels chain-explode.
+
+### Movement additions
+
+Wall slide and wall jump, swimming, ice on snow maps, mushroom bounce pads, and the harpoon grapple.
+
+### New weapons (15)
+
+Ink Rocket, Bounce Bomb, Scattergun, Rail Lance, Storm Coil (tesla), Dragon's Breath (flamer), Frostbite (cryo), Void Orb, Shredder (minigun), Bubble Blaster, Harpoon, Longshot (sniper), Quake Hammer, Boomerang, Reaper Scythe. Every weapon has a rarity (common, rare, epic, legendary) shown as a coloured edge and label in the UI.
+
+### Extra weapon fields
+
+All optional. Unknown fields are ignored, so older weapon scripts keep working.
+
+| Field | Meaning |
+|---|---|
+| `rarity`, `description` | Shown on the weapon card, reveal and weapon list |
+| `projectile: { type, size, color, glow, trail, spin }` | `type`: `bullet`, `rocket`, `grenade`, `orb`, `bubble`, `boomerang`, `flame`, `shard`, `hook`, `beam` |
+| `explosion: { radius, damage, knockback, crater, selfDamage }` | Area damage on impact |
+| `cluster: { count, damage, radius, crater }` | Child bomblets after the main explosion |
+| `fuse`, `bounciness`, `drag`, `life` | Timed grenades, bounces, air drag, lifetime in seconds |
+| `pierce`, `passTerrain`, `homing` | Pass through players, ignore terrain, turn rate towards the nearest enemy |
+| `beam`, `charge`, `laser` | Instant hit-scan, wind-up time, laser sight while aiming |
+| `chain: { count, range, damage }` | Lightning jumps between players |
+| `status: { burn, chill, shock, bubble }` | Seconds of each effect. Three chill hits freeze |
+| `ignites` | Sets trees and barrels on fire |
+| `pull: { radius, force }` | Black-hole pull while flying |
+| `pullToShooter`, `grapple` | Harpoon: drag the target to you, or yourself to the wall |
+| `returns`, `hideWhileFlying` | Boomerang behaviour |
+| `magazine`, `reloadTime`, `spinUp`, `burst: { count, gap }` | Magazine and reload (press R or tap the weapon card), minigun spin-up, burst fire |
+| `moveSpeed` | Run speed multiplier while held |
+| `combo`, `arc`, `shockwave`, `lifesteal` | Melee: combo chain multipliers, `arc: 360` spin attacks, ground shockwave, heal on hit |
+| `sound: { type }` | `rocket`, `thump`, `laser`, `zap`, `flame`, `whoosh`, `bubble`, `freeze`, ... |
+
+### Settings and performance
+
+Settings (title screen chip, or from the pause menu) are saved in a cookie: graphics (Adaptive, High, Medium, Low), weather effects, camera shake, volume and an fps readout.
+
+Adaptive mode starts from a guess based on the device (cores, memory, screen size) and then watches the frame rate. If it drops below 50 fps it lowers render resolution and effect density one step; once it holds 60 again it steps back up. Physics, hit detection and gameplay never change with quality. Rendering only draws what is on screen (terrain, props, water, particles, nametags are culled), and the menu is only redrawn when it changes.
+
+### Hosting without folder listings
+
+Run `python3 tools/make-manifest.py` after adding weapons or characters. It writes `weapons/manifest.json` and `char/manifest.json`, which the game reads on hosts like Netlify or Vercel.

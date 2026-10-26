@@ -52,7 +52,8 @@ svg.ico .f{fill:currentColor;stroke:none}
 .card .sub{margin:0 0 18px;color:var(--ink-soft);font-size:15px}
 .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .col{display:flex;flex-direction:column;gap:12px}
-label.lbl{font-size:13px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.08em}
+label.lbl,span.lbl{display:block;font-size:13px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.08em}
+#pickLabel{margin:4px 0 2px}
 .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
 input.txt{width:100%;font-size:18px;padding:12px 14px;border:2.2px solid var(--ink);border-radius:var(--r-wob2);
   background:#f6f0e4;outline:none;font-weight:600;-webkit-user-select:text;user-select:text}
@@ -181,7 +182,7 @@ input.code{text-transform:uppercase;letter-spacing:.35em;font-weight:800;text-al
 .reveal .rc img,.reveal .rc canvas{max-width:170px;max-height:70px;object-fit:contain;filter:drop-shadow(2px 3px 0 rgba(31,28,36,.25))}
 .reveal .rc b{font-size:18px}
 @keyframes flipIn{0%{opacity:0;transform:perspective(600px) rotateY(100deg) scale(.6)}100%{opacity:1;transform:none}}
-.hint{position:absolute;left:50%;bottom:calc(84px + var(--safe-b));transform:translateX(-50%);padding:8px 16px;border-radius:var(--r-wob2);
+.hint{position:absolute;left:50%;bottom:calc(132px + var(--safe-b));transform:translateX(-50%);padding:8px 16px;border-radius:var(--r-wob2);
   background:rgba(31,28,36,.8);color:var(--paper);font-weight:700;font-size:15px;white-space:nowrap;animation:cardIn .4s both}
 .toasts{position:absolute;left:calc(14px + var(--safe-l));top:calc(70px + var(--safe-t));display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 .toast{padding:7px 14px;border:2px solid var(--ink);border-radius:var(--r-wob2);background:rgba(246,240,228,.95);font-weight:700;font-size:14px;animation:kfIn .35s both;display:flex;gap:8px;align-items:center}
@@ -214,6 +215,22 @@ input.code{text-transform:uppercase;letter-spacing:.35em;font-weight:800;text-al
 .loading .ink{width:60px;height:60px;border-radius:46% 54% 50% 50%/55% 45% 55% 45%;background:var(--ink);animation:morph 1.2s ease-in-out infinite}
 @keyframes morph{0%,100%{border-radius:46% 54% 50% 50%/55% 45% 55% 45%;transform:rotate(0) scale(1)}50%{border-radius:60% 40% 38% 62%/42% 58% 42% 58%;transform:rotate(30deg) scale(.86)}}
 @media (max-height:560px){.card{padding:16px 20px}.card h2{font-size:24px}.logo{font-size:64px}.menu-btns .btn{min-height:52px}.field{margin-bottom:8px}}
+
+/* Expansion: same ink & paper, a quieter layer of useful information. */
+.screen{overflow-y:auto;touch-action:pan-y}.card{max-height:calc(100dvh - 42px);overflow:auto;scrollbar-width:thin;touch-action:pan-y}
+select{font:700 15px var(--font);background:#f6f0e4;border:2px solid var(--ink);border-radius:8px 13px 8px 12px;padding:11px 12px;width:100%;min-height:44px;color:var(--ink);outline-offset:3px}
+.setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:var(--ink-soft)}
+.exp-note{background:#ded3bd;border-left:3px solid var(--teal);padding:10px 12px;font-size:13px;line-height:1.5;margin:0 0 18px}
+.setting-row{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:14px 0;border-bottom:1px solid #c8bca7;font-weight:700}.setting-row select{width:160px}.setting-row input{width:130px;accent-color:var(--teal)}.setting-row input[type=checkbox]{width:22px;height:22px}
+#wcard{border-top:4px solid var(--rarity,var(--ink))}.rarity-label{text-transform:uppercase;letter-spacing:.12em;font-size:10px;font-weight:800;color:var(--rarity,#645b50);margin-bottom:3px}
+.witem{border-top:4px solid var(--rarity,var(--ink))}.witem .tag{background:var(--rarity,var(--ink));color:#fff}.witem .desc{min-height:44px;line-height:1.4}.reveal .rc{border-top:5px solid var(--rarity,var(--ink));height:155px}.reveal small{font-size:11px;text-transform:uppercase;letter-spacing:.13em;color:var(--rarity)}
+.round-chip{position:absolute;top:74px;left:50%;transform:translateX(-50%);background:rgba(246,240,228,.9);border:1.5px solid var(--ink);padding:5px 12px;border-radius:5px 12px 5px 12px;font-size:12px;font-weight:800;white-space:nowrap}.round-chip b{font-variant-numeric:tabular-nums;margin-left:8px}
+.reload-track{height:3px;overflow:hidden;border-radius:3px;margin-top:5px;background:#d0c4ad}.reload-track i{display:block;height:100%;width:0;background:var(--teal)}#statusText{font-size:10px;letter-spacing:.07em;font-weight:800;color:#80513c;min-height:13px;margin-top:3px}.wcard{min-width:225px}.wcard .hpbar{width:145px}
+#miniMap{position:absolute;right:14px;bottom:38px;width:170px;height:90px;border:2px solid var(--ink);border-radius:8px 15px 8px 15px;background:rgba(236,227,209,.85)}
+#fpsReadout{position:absolute;left:12px;bottom:10px;font:700 11px var(--font);color:var(--ink-soft);background:rgba(246,240,228,.8);padding:3px 7px;border-radius:5px}button:focus-visible,[role=button]:focus-visible{outline:3px solid var(--teal);outline-offset:4px}.screen .sub{line-height:1.5}
+@media(max-width:600px){.screen{padding:14px;align-items:flex-start}.screen>.card{margin:auto 0;max-height:calc(100dvh - 28px);padding:18px}.tagline{font-size:12px;text-align:center}#title .wrap{margin:auto 0;gap:14px}.menu-card{padding:18px}.menu-btns .btn{font-size:14px;padding:10px 8px}.sw.char{width:40px;height:40px}.swatches{gap:9px}.chips{gap:7px}.chip{font-size:11px;padding:7px 9px}.scores{gap:4px;padding-top:2px}.score{font-size:10px;padding:4px 6px;gap:3px}.score .blob{width:12px;height:12px}.codechip{display:none}.hud-btn{width:40px;height:40px}.round-chip{top:66px;font-size:10px}.wcard{bottom:12px;gap:7px;min-width:190px;padding:6px 10px}.wcard .wimg{width:45px}.wcard .wimg img{max-width:45px}.wcard .wn{font-size:13px}.wcard .hpbar{width:120px}#miniMap{width:120px;height:62px;right:8px;top:96px;bottom:auto}.wcard .pips small{display:none}.wcard .rarity-label{font-size:9px;margin-bottom:0}#statusText{min-height:0;font-size:9px}.net{font-size:9px;max-width:90px;text-align:right}.hint{bottom:calc(112px + var(--safe-b));max-width:92vw;white-space:normal;text-align:center;font-size:12px}.killfeed{top:100px}.gm-exp .killfeed{top:166px}.kf{font-size:11px}.banner .small{font-size:14px}.setting-row select{width:130px}.setup-grid{gap:8px}.tlabel{display:none}}
+@media(max-height:550px){#title .wrap{gap:9px}.logo{font-size:48px}.tagline{font-size:12px}.sw.char{width:34px;height:34px}.field{margin-bottom:8px}.menu-btns .btn{min-height:44px;font-size:14px}.screen{padding:12px}.screen>.card{max-height:calc(100dvh - 24px)}.menu-card{padding:12px 20px}.round-chip{top:55px}.reveal{top:60%}.reveal .rc{height:112px;width:190px}.reveal .rc img{max-height:45px}.wcard{bottom:8px}.banner{top:22%}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
 <body>
@@ -269,7 +286,7 @@ input.code{text-transform:uppercase;letter-spacing:.35em;font-weight:800;text-al
         </div>
       </div>
       <div class="chips">
-        <span class="chip" id="chipWeapons"><svg class="ico"><use href="#i-cross"/></svg><span id="wCount">loading weapons…</span></span>
+        <button class="chip" id="bSettings">Settings</button><span class="chip" id="chipWeapons" role="button" tabindex="0"><svg class="ico"><use href="#i-cross"/></svg><span id="wCount">loading weapons…</span></span>
         <span class="chip" id="chipLobby"><span class="dot" id="lobbyDot"></span><span id="lobbyTxt">connecting to server list…</span></span>
       </div>
     </div>
@@ -289,6 +306,7 @@ input.code{text-transform:uppercase;letter-spacing:.35em;font-weight:800;text-al
         <div class="field" style="flex:1;min-width:200px"><span class="lbl">Bots (fill empty seats)</span><div class="seg" id="segBots"><button class="on">0</button><button>1</button><button>2</button><button>3</button></div></div>
         <div class="field" style="flex:1;min-width:170px"><span class="lbl">Visibility</span><div class="seg" id="segVis"><button class="on">Public</button><button>Private</button></div></div>
       </div>
+      <div class="setup-grid"><div class="field"><label class="lbl" for="hostMode">Mode</label><select id="hostMode"><option value="arena">Classic arena</option><option value="expedition">The Big Wilds</option></select></div><div class="field"><label class="lbl" for="hostBiome">Atmosphere</label><select id="hostBiome"></select></div></div>
       <div class="err" id="hostErr"></div>
       <div class="row" style="justify-content:space-between;margin-top:6px">
         <button class="btn ghost" data-back><svg class="ico"><use href="#i-back"/></svg>Back</button>
@@ -360,12 +378,14 @@ input.code{text-transform:uppercase;letter-spacing:.35em;font-weight:800;text-al
         <button class="btn small icon" id="bBotPlus" style="width:44px">+</button>
       </div>
       <div class="row" style="justify-content:space-between">
-        <button class="btn ghost" id="bLeave"><svg class="ico"><use href="#i-back"/></svg>Leave</button>
+        <button class="btn small" id="bPauseSettings">Settings</button><button class="btn ghost" id="bLeave"><svg class="ico"><use href="#i-back"/></svg>Leave</button>
         <button class="btn primary" id="bResume"><svg class="ico"><use href="#i-play"/></svg>Resume</button>
       </div>
     </div>
   </section>
 
+  <section class="screen hidden" id="practice"><div class="card" style="max-width:510px"><div class="eyebrow">Offline / your rules</div><h2>The drawing board</h2><p class="sub">Pick a world, grab a random weapon, make a mess.</p><div class="setup-grid"><div class="field"><label class="lbl" for="practiceMode">Mode</label><select id="practiceMode"><option value="arena">Classic arena</option><option value="expedition">The Big Wilds</option></select></div><div class="field"><label class="lbl" for="practiceBiome">Atmosphere</label><select id="practiceBiome"></select></div><div class="field"><label class="lbl" for="practiceBots">Bots</label><select id="practiceBots"><option value="0">None / sandbox</option><option value="1">1 bot</option><option value="3" selected>3 bots</option><option value="5">5 bots</option><option value="7">7 bots</option></select></div><div class="field"><label class="lbl" for="practiceTarget">First to</label><select id="practiceTarget"><option>3</option><option selected>5</option><option>10</option></select></div></div><p class="exp-note" id="modeNote">Classic: tight, destructible arenas. Last scribble standing wins.</p><div class="row" style="justify-content:space-between"><button class="btn ghost" data-back>Back</button><button class="btn primary" id="bPlayPractice">Draw weapons</button></div><p style="font-size:11px;color:var(--ink-soft);margin:18px 0 0">A / D move · Space jump · Click fire · R reload · Esc menu<br>Touch: left thumb move, right thumb aim and release. Jump button above.</p></div></section>
+  <section class="screen hidden" id="settings"><div class="card" style="max-width:460px"><div class="eyebrow">Make it feel right</div><h2>Settings</h2><p class="sub">The same messy little game, tuned for your device.</p><label class="setting-row">Graphics<select id="graphicsSetting"><option value="auto">Adaptive</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label><label class="setting-row">Weather effects<input type="checkbox" id="weatherSetting" checked></label><label class="setting-row">Camera shake<input type="checkbox" id="shakeSetting" checked></label><label class="setting-row">Volume<input type="range" id="volumeSetting" min="0" max="100" value="65"></label><label class="setting-row">Show performance<input type="checkbox" id="fpsSetting"></label><p class="sub" style="font-size:12px;margin-top:16px">Adaptive mode adjusts effects and resolution while leaving physics and hit detection unchanged. Weather hazards still play when effects are hidden.</p><button class="btn wide" id="bSettingsBack">Done</button></div></section>
   <!-- HUD -->
   <div id="hud" class="hidden">
     <div class="hud-top">
@@ -373,11 +393,11 @@ input.code{text-transform:uppercase;letter-spacing:.35em;font-weight:800;text-al
       <div class="codechip" id="codeChip"><svg class="ico"><use href="#i-people"/></svg><span id="hudCode">-----</span></div>
       <div class="scores" id="scores"></div>
     </div>
-    <div class="toasts" id="toasts"></div>
+    <div class="round-chip" id="roundChip"></div><canvas id="miniMap" width="340" height="170" class="hidden"></canvas><div id="fpsReadout" class="hidden"></div><div class="toasts" id="toasts"></div>
     <div class="killfeed" id="killfeed"></div>
     <div class="banner" id="banner"></div>
     <div class="reveal hidden" id="reveal"></div>
-    <div class="wcard" id="wcard"><div class="wimg" id="wcImg"></div><div><div class="wn" id="wcName">—</div><div class="pips" id="wcPips"></div><div class="hpbar"><i id="wcHp" style="width:100%"></i></div></div></div>
+    <div class="wcard" id="wcard"><div class="wimg" id="wcImg"></div><div><div class="rarity-label" id="wcRarity"></div><div class="wn" id="wcName">—</div><div class="pips" id="wcPips"></div><div class="hpbar"><i id="wcHp" style="width:100%"></i></div><div class="reload-track"><i id="reloadBar"></i></div><div id="statusText"></div></div></div>
     <div class="hint hidden" id="hint"></div>
     <div class="net" id="netInfo"></div>
   </div>
@@ -423,7 +443,7 @@ function smoothPath(ctx, pts) {
 }
 
 /* ---------- 2. config ---------- */
-const W = 1600, H = 1000, CELL = 4, GW = W / CELL, GH = H / CELL;
+const CELL = 4; let W = 1600, H = 1000, GW = W / CELL, GH = H / CELL;
 const PW = 30, PH = 40, HW = PW / 2, HH = PH / 2;
 const GRAV = 2300, RUN = 370, JUMP = 840, JUMP2 = 740, MAXFALL = 1500;
 const INK = '#1f1c24';
@@ -444,10 +464,10 @@ const NOTEX = (() => { const c = mkCanvas(64, 64), x = c.getContext('2d'); for (
 const FISTS = { id: '_fists', name: 'Fists', type: 'melee', weight: 0, damage: 14, knockback: 520, swingTime: .15, cooldown: .36, reach: 50, arc: 90, lunge: 300, deflect: false, uses: 0,
   sprite: null, destruction: { crater: 0, debris: 0, dust: .3, scorch: 0, dent: false }, vfx: { trail: '#f3efe6', trailWidth: .55, sparks: .4, light: null }, shake: 2, hitStop: .03, sound: { type: 'punch', pitch: 1, volume: .8 }, img: null, builtin: true };
 const W_DEFAULTS = {
-  gun: { damage: 25, knockback: 400, headshot: 1.5, fireRate: 3, ammo: 8, automatic: false, bullets: 1, spread: .03, bulletSpeed: 2200, bulletGravity: 100, range: 1600, recoil: 160, bounces: 0,
+  gun: { rarity: 'common', description: '', damage: 25, knockback: 400, headshot: 1.5, fireRate: 3, ammo: 8, automatic: false, bullets: 1, spread: .03, bulletSpeed: 2200, bulletGravity: 100, range: 1600, recoil: 160, bounces: 0,
     sprite: { length: 60, gripX: .25, gripY: .65, muzzleX: 1, muzzleY: .3, holdDistance: 18 }, destruction: { crater: 12, jagged: .35, debris: 8, dust: 1, scorch: .5, dent: true },
     vfx: { muzzleFlash: 1, tracer: '#ffd9a0', sparks: 1, smoke: 1, shells: true, light: '#ffb35c' }, shake: 4, hitStop: .03, sound: { type: 'shot', pitch: 1, volume: .9 } },
-  melee: { damage: 45, knockback: 700, swingTime: .25, cooldown: .45, reach: 85, arc: 140, lunge: 560, deflect: true, uses: 0,
+  melee: { rarity: 'common', description: '', damage: 45, knockback: 700, swingTime: .25, cooldown: .45, reach: 85, arc: 140, lunge: 560, deflect: true, uses: 0,
     sprite: { length: 90, gripX: .15, gripY: .5, holdDistance: 14 }, destruction: { crater: 8, jagged: .6, debris: 6, dust: .8, scorch: 0, dent: true },
     vfx: { trail: '#f3efe6', trailWidth: 1, sparks: 1, light: '#fff1d0' }, shake: 3, hitStop: .05, sound: { type: 'swing', pitch: 1, volume: .8 } }
 };
@@ -520,15 +540,18 @@ async function githubList(sub) {
 async function fetchText(u) { try { const r = await fetch(u, { cache: 'no-store' }); if (!r.ok) return null; const t = await r.text(); if (/^\s*<!doctype html|^\s*<html/i.test(t)) return null; return t; } catch (e) { return null; } }
 
 async function discoverWeapons() {
-  Weapons.log = []; let dirs = null, how = '';
+  Weapons.log = []; let dirs = null, how = '', manifest = null;
+  try { const r = await fetch('weapons/manifest.json'); if (r.ok) manifest = (await r.json()).weapons; } catch(e) {}
   let L = await listDir('weapons/');
   if (L && L.dirs.length) { dirs = L.dirs; how = 'folder listing'; }
   if (!dirs) { L = await githubList('weapons'); if (L && L.dirs.length) { dirs = L.dirs; how = 'GitHub repository'; } }
+  if (!dirs && manifest?.length) { dirs = manifest.map(x => x.id); how = 'manifest'; }
   const found = [];
   if (dirs) {
     await Promise.all(dirs.map(async name => {
       let sub = how === 'folder listing' ? await listDir(`weapons/${encodeURIComponent(name)}/`) : how === 'GitHub repository' ? await githubList(`weapons/${name}`) : null;
-      const files = sub ? sub.files : [];
+      const entry = manifest?.find(x => x.id === name);
+      const files = sub ? sub.files : entry ? [entry.js, entry.png].filter(Boolean) : [];
       const js = files.find(f => f.toLowerCase() === name.toLowerCase() + '.js') || files.find(f => /\.js$/i.test(f)) || name + '.js';
       const png = files.find(f => f.toLowerCase() === name.toLowerCase() + '.png') || files.find(f => /\.png$/i.test(f)) || name + '.png';
       const base = `weapons/${encodeURIComponent(name)}/`;
@@ -639,6 +662,7 @@ async function discoverChars() {
     const g = await githubList('char');
     if (g && g.files) { files = g.files.filter(f => /\.png$/i.test(f)); how = 'GitHub repository'; }
   }
+  if (!files?.length) { try { const r = await fetch('char/manifest.json'); if(r.ok) { files = (await r.json()).chars; how = 'manifest'; } } catch(e) {} }
   const found = [];
   if (files && files.length) {
     for (const f of files) {
@@ -659,8 +683,8 @@ async function discoverChars() {
 const T = { grid: new Uint8Array(GW * GH), Q: 1.5, seed: 1, theme: THEMES[0], mask: null, tex: null, decal: null, out: null, tmp: null, tmp2: null, patchA: null, patchB: null, pctxA: null, pctxB: null, bg: null, dirty: [], craters: [] };
 function terrainInit(Q) {
   T.Q = Q; const w = W * Q, h = H * Q;
-  for (const k of ['mask', 'tex', 'decal', 'out', 'tmp', 'tmp2']) T[k] = mkCanvas(w, h);
-  T.mctx = T.mask.getContext('2d'); T.dctx = T.decal.getContext('2d'); T.octx = T.out.getContext('2d');
+  for (const k of ['mask', 'tex', 'out', 'tmp', 'tmp2']) T[k] = mkCanvas(w, h);
+  T.mctx = T.mask.getContext('2d'); T.dctx = T.tex.getContext('2d'); T.octx = T.out.getContext('2d');
   // Small reusable canvases prevent each crater from compositing through full-map-sized buffers.
   T.patchA = mkCanvas(512, 512); T.patchB = mkCanvas(512, 512);
   T.pctxA = T.patchA.getContext('2d'); T.pctxB = T.patchB.getContext('2d');
@@ -702,7 +726,7 @@ function generateMap(seed) {
   // grid from mask
   const small = mkCanvas(GW, GH), sc = small.getContext('2d'); sc.drawImage(T.mask, 0, 0, GW, GH);
   const d = sc.getImageData(0, 0, GW, GH).data; for (let i = 0; i < GW * GH; i++) T.grid[i] = d[i * 4 + 3] > 120 ? 1 : 0;
-  buildTexture(R); T.dctx.setTransform(1, 0, 0, 1, 0, 0); T.dctx.clearRect(0, 0, T.decal.width, T.decal.height);
+  buildTexture(R);
   buildBackground(R); rebuildTerrain(null);
 }
 function surfaceYApproxFromMask(x) { const sc = T.mctx; const col = sc.getImageData(Math.floor(x * T.Q), 0, 1, T.mask.height).data; for (let y = 0; y < T.mask.height; y++) if (col[y * 4 + 3] > 120) return y / T.Q; return null; }
@@ -757,7 +781,7 @@ function rebuildTerrainFull() {
   t.drawImage(T.mask, -4.5 * Q, -3.5 * Q); t.globalCompositeOperation = 'source-in'; t.drawImage(T.tex, 0, 0); t.globalCompositeOperation = 'source-over';
   o.globalAlpha = .55; o.drawImage(T.tmp, 0, 0); o.globalAlpha = 1; t.clearRect(0, 0, T.tmp.width, T.tmp.height);
   inkDilateFull(t, T.mask, 3.1 * Q, INK); o.drawImage(T.tmp, 0, 0); t.clearRect(0, 0, T.tmp.width, T.tmp.height);
-  t.drawImage(T.mask, 0, 0); t.globalCompositeOperation = 'source-in'; t.drawImage(T.tex, 0, 0); t.globalCompositeOperation = 'source-atop'; t.drawImage(T.decal, 0, 0);
+  t.drawImage(T.mask, 0, 0); t.globalCompositeOperation = 'source-in'; t.drawImage(T.tex, 0, 0); t.globalCompositeOperation = 'source-atop'; if (T.decal && T.decal.width > 1) t.drawImage(T.decal, 0, 0);
   t2.drawImage(T.mask, 0, 0); t2.globalCompositeOperation = 'destination-out'; t2.drawImage(T.mask, 0, 9 * Q); t2.globalCompositeOperation = 'source-in'; t2.fillStyle = th.cap; t2.fillRect(0, 0, T.out.width, T.out.height); t2.globalCompositeOperation = 'source-over';
   t.globalAlpha = .9; t.drawImage(T.tmp2, 0, 0); t2.clearRect(0, 0, T.tmp2.width, T.tmp2.height);
   t2.drawImage(T.mask, 0, 0); t2.globalCompositeOperation = 'destination-out'; t2.drawImage(T.mask, 0, 2.2 * Q); t2.globalCompositeOperation = 'source-in'; t2.fillStyle = '#fff6df'; t2.fillRect(0, 0, T.out.width, T.out.height); t2.globalCompositeOperation = 'source-over';
@@ -821,7 +845,7 @@ function rebuildTerrainRegion(rect) {
   // Terrain fill + scorch/decal layer.
   clearPatch(a, rw, rh); cropInto(a, T.mask, rx, ry, rw, rh);
   a.globalCompositeOperation = 'source-in'; cropInto(a, T.tex, rx, ry, rw, rh);
-  a.globalCompositeOperation = 'source-atop'; cropInto(a, T.decal, rx, ry, rw, rh); a.globalCompositeOperation = 'source-over';
+  a.globalCompositeOperation = 'source-over';
   o.drawImage(T.patchA, 0, 0, rw, rh, rx, ry, rw, rh);
 
   // Sunlit cap band.
@@ -1074,8 +1098,8 @@ const FX = {
     }
     // Settled debris loses support when terrain beneath is carved. Ignore other particle types.
     for (const p of this.parts) if (p.rest && p.k === 'debris' && !solidAt(p.x, p.y + (p.s || 2) + 2)) p.rest = false;
-    this.parts = this.parts.filter(p => p.t < p.life);
-    for (const l of this.lights) l.life -= dt; this.lights = this.lights.filter(l => l.life > 0);
+    let keep = 0; for (let i=0;i<this.parts.length;i++) if(this.parts[i].t < this.parts[i].life) this.parts[keep++] = this.parts[i]; this.parts.length = keep;
+    for (const l of this.lights) l.life -= dt; let lk=0; for(let i=0;i<this.lights.length;i++) if(this.lights[i].life>0) this.lights[lk++]=this.lights[i]; this.lights.length=lk;
   }
 };
 
@@ -1124,13 +1148,13 @@ const Audio2 = {
 };
 
 /* ---------- 8. render ---------- */
-const cv = $('#game'); const ctx = cv.getContext('2d');
+const cv = $('#game'); const ctx = cv.getContext('2d', { alpha: false });
 const R8 = { dpr: 1, scale: 1, ox: 0, oy: 0, cw: 0, ch: 0, grain: null, quality: 1, fpsAvg: 60, skyGrad: null, skyKey: '', overlay: null, overlayKey: '', menuGrad: null, menuKey: '' };
 function resize() {
   const want = Math.min(window.devicePixelRatio || 1, 2) * R8.quality; R8.dpr = want;
   R8.cw = innerWidth; R8.ch = innerHeight; cv.width = Math.round(R8.cw * want); cv.height = Math.round(R8.ch * want);
   const padTop = 58; R8.scale = Math.min(R8.cw / W, (R8.ch - padTop * .5) / H); R8.ox = (R8.cw - W * R8.scale) / 2; R8.oy = Math.max(padTop * .5, (R8.ch - H * R8.scale) / 2 + padTop * .25);
-  R8.skyKey = ''; R8.overlayKey = ''; R8.menuKey = '';
+  R8.skyKey = ''; R8.overlayKey = ''; R8.menuKey = ''; R8.menuDirty=true;
 }
 function makeGrain() { const c = mkCanvas(220, 220), x = c.getContext('2d'), d = x.createImageData(220, 220); for (let i = 0; i < d.data.length; i += 4) { const v = 215 + Math.random() * 40; d.data[i] = v; d.data[i + 1] = v * .985; d.data[i + 2] = v * .95; d.data[i + 3] = 255; } x.putImageData(d, 0, 0); return x.createPattern(c, 'repeat'); }
 function toScreen(x, y) { return [R8.ox + x * R8.scale, R8.oy + y * R8.scale]; }
@@ -1505,10 +1529,10 @@ function hostSwingStep(p) {
     for (const f of [.95, .75, .55]) { const px = p.x + Math.cos(cur) * reach * f, py = p.y + 2 + Math.sin(cur) * reach * f; if (solidAt(px, py)) { const d = w.destruction; sw.gashed = true; emit({ k: 'crater', x: Math.round(px), y: Math.round(py), r: d.crater, j: d.jagged ?? .6, s: randSeed(), sc: d.scorch || 0, dn: !!d.dent, deb: d.debris | 0, du: d.dust ?? .8, sp: 1 }); break; } }
   }
 }
-function setPhase(ph, left, extra = {}) { emit(Object.assign({ k: 'round', ph, left, seed: T.seed, n: G.round, sc: scoresList() }, extra)); }
+function setPhase(ph, left, extra = {}) { emit(Object.assign({ k: 'round', ph, left, bi: G.biome, mo: G.gameMode, seed: T.seed, n: G.round, sc: scoresList() }, extra)); }
 function scoresList() { return [...G.players.values()].map(p => [p.id, p.score]); }
 function startRound() {
-  G.round++; const seed = randSeed() & 0x7fffffff; emit({ k: 'round', ph: 'countdown', left: 2.6, seed, n: G.round, sc: scoresList() });
+  G.round++; G.biome = G.biomeChoice < 0 ? (Math.random()*THEMES.length|0) : G.biomeChoice; const seed = randSeed() & 0x7fffffff; emit({ k: 'round', ph: 'countdown', left: 2.6, bi: G.biome, mo: G.gameMode, seed, n: G.round, sc: scoresList() });
   const ps = [...G.players.values()]; const spots = findSpawns(ps.length);
   ps.forEach((p, i) => hostSpawn(p, spots[i]));
 }
@@ -1522,7 +1546,7 @@ function hostRules() {
   if (G.phase === 'warmup') {
     for (const p of all) if (!p.alive && t > p.respawnAt) hostSpawn(p);
     if (all.length >= 2) startRound();
-  } else if (G.phase === 'countdown') { if (t >= G.phaseEnd) { G.sd = false; G.sdTick = 0; setPhase('fight', ROUND_TIME); } }
+  } else if (G.phase === 'countdown') { if (t >= G.phaseEnd) { G.sd = false; G.sdTick = 0; setPhase('fight', G.gameMode === 'expedition' ? 150 : ROUND_TIME); } }
   else if (G.phase === 'fight') {
     if (all.length < 2) { setPhase('warmup', 0); return; }
     const alive = all.filter(p => p.alive);
@@ -1631,13 +1655,14 @@ function hostRecv(conn, m) {
       let color = ch ? ch.color : (PLAYER_COLORS.includes(m.color) && !used.has(m.color) ? m.color : (PLAYER_COLORS.find(x => !used.has(x)) || PLAYER_COLORS[0]));
       const pid = 'p' + (++G.pidCounter); const np = makePlayer(pid, cleanName(m.name), color, false, ch ? ch.id : null); np.conn = conn; Net.conns.set(conn.peer, { conn, pid }); G.players.set(pid, np);
       const bots = [...G.players.values()].filter(q => q.isBot); for (const b of bots) b.color === color && (b.color = PLAYER_COLORS.find(x => ![...G.players.values()].some(q => q.color === x)) || b.color);
-      netSend(conn, { t: 'welcome', id: pid, room: { code: G.code, name: G.roomName, max: G.maxPlayers, target: G.target }, ph: G.phase, left: Math.max(0, G.phaseEnd - now()), n: G.round, seed: T.seed, craters: T.craters, weapons: Weapons.list.map(netSafe) });
+      netSend(conn, { t: 'welcome', id: pid, room: { code: G.code, name: G.roomName, max: G.maxPlayers, target: G.target }, ph: G.phase, left: Math.max(0, G.phaseEnd - now()), n: G.round, seed: T.seed, craters: T.craters, bi: G.biome, mo: G.gameMode, crates: Env.crates, props: Env.props.map(p=>({id:p.id,fall:p.fall,burn:p.burn,dead:p.dead})), weapons: Weapons.list.map(netSafe) });
       sendWeaponImages(conn);
       syncBots(); broadcastRoster(); emit({ k: 'join', id: pid, name: np.name });
       if (G.phase !== 'over' && G.phase !== 'champion') hostSpawn(np); else np.respawnAt = 0;
       Lobby.publish(); UI.rosterChanged(); break;
     }
     case 'u': if (p) { p.tx = +m.x || 0; p.ty = +m.y || 0; p.tvx = +m.vx || 0; p.tvy = +m.vy || 0; p.aim = +m.a || 0; p.face = m.f > 0 ? 1 : -1; p.rg = !!m.g; p.aiming = !!m.am; p.tsnap = now(); } break;
+    case 'reload': if(p) beginReload(p); break;
     case 'atk': if (p) hostAttack(p.id, +m.a, +m.x, +m.y, m.s | 0, true); break;
     case 'ping': netSend(conn, { t: 'pong', ts: m.ts }); break;
     case 'bye': hostDrop(conn); break;
@@ -1677,7 +1702,7 @@ function clientRecv(m) {
       Weapons.backup = Weapons.backup || { list: Weapons.list, byId: Weapons.byId, source: Weapons.source };
       const list = (m.weapons || []).map(d => { const w = normalizeWeapon(d, d.id); w.img = null; w._tag = null; return w; }); Weapons.list = list; Weapons.byId = { _fists: FISTS }; for (const w of list) Weapons.byId[w.id] = w; Weapons.source = 'from host';
       G.isHost = false; G.offline = false; G.demo = false; G.myId = m.id; G.code = m.room.code; G.roomName = m.room.name; G.maxPlayers = m.room.max; G.target = m.room.target;
-      G.players.clear(); G.bullets = []; FX.parts = []; generateMap(m.seed); for (const c of m.craters || []) carveCrater(c); T.craters = (m.craters || []).slice(); rebuildTerrain(null); T.dirty = null;
+      G.players.clear(); G.bullets = []; FX.parts = []; G.gameMode = m.mo || 'arena'; G.biome = m.bi ?? 0; generateMap(m.seed); Env.crates = m.crates || []; for(const v of m.props||[]) { const q=Env.props.find(p=>p.id===v.id); if(q) Object.assign(q,v); } for (const c of m.craters || []) carveCrater(c); T.craters = (m.craters || []).slice(); rebuildTerrain(null); T.dirty = null;
       G.phase = m.ph; G.phaseEnd = now() + (m.left || 0); G.round = m.n; enterPlay(); break;
     }
     case 'wimg': { const k = m.id; const st = Net.imgParts[k] || (Net.imgParts[k] = []); st[m.i] = m.d; if (st.filter(Boolean).length === m.n) { const data = st.join(''); delete Net.imgParts[k]; loadImg(data).then(img => { const w = Weapons.byId[k]; if (w && img) { w.img = img; w._tag = null; UI.weaponsChanged(); UI.hudWeapon(true); } }); } break; }
@@ -1687,8 +1712,8 @@ function clientRecv(m) {
     }
     case 's': {
       for (const a of m.p) {
-        const [id, x, y, vx, vy, aim, face, hp, alive, wid, ammo, score, g] = a; const p = G.players.get(id); if (!p) continue;
-        p.hp = hp; p.wid = wid; p.score = score;
+        const [id, x, y, vx, vy, aim, face, hp, alive, wid, ammo, score, g, aiming, st, mag, reload] = a; const p = G.players.get(id); if (!p) continue;
+        p.hp = hp; p.wid = wid; p.score = score; if (id !== G.myId || now() - (p.predT || 0) > .6) { p.mag = mag; p.reloadEnd = reload ? now() + reload : 0; } if (st) p.status = st; if (id !== G.myId) p.aiming = !!aiming;
         if (id === G.myId) { if (now() - (p.predT || 0) > .5) p.ammo = ammo; if (!!alive && !p.alive && now() - (p.diedT || 0) > 1) { p.alive = true; p.x = x; p.y = y; } continue; }
         p.tx = x; p.ty = y; p.tvx = vx; p.tvy = vy; p.aim = aim / 1000; p.face = face; p.ammo = ammo; p.rg = !!g; p.tsnap = now();
         if (!!alive !== p.alive && now() - (p.evT || 0) > .6) { p.alive = !!alive; if (p.alive) { p.x = x; p.y = y; } }
@@ -1753,7 +1778,7 @@ function applyEvent(e) {
     case 'crater': applyCrater(e); T.craters.push(e); if (T.craters.length > 420) T.craters.shift(); if (e.sp) FX.sparks(e.x, e.y, -Math.PI / 2, 8, '#fff1d0'); break;
     case 'hit': {
       if (!p) break; p.hp = e.hp; p.hurt = 1; p.evT = now(); const big = e.d >= 30; const dir = Math.atan2(e.ky, e.kx);
-      if (e.d > 0) { FX.ink(e.x, e.y, Math.min(14, Math.round(4 + e.d / 8)), p.color, big ? 1.05 : .72, dir); FX.ring(e.x, e.y, big ? 40 : 26, 'rgba(255,250,240,.92)', big ? 3 : 2, .18); FX.sparks(e.x, e.y, dir, big ? 5 : 3, '#fff6e2'); FX.add({ k: 'num', x: e.x, y: e.y - 18, vy: -120, t: 0, life: .8, txt: (e.h ? '✶ ' : '') + e.d, col: p.color }); Audio2.play('hit', e.x, big ? 1 : .7); }
+      if (e.d > 0) { FX.ink(e.x, e.y, Math.min(14, Math.round(4 + e.d / 8)), p.color, big ? 1.05 : .72, dir); FX.ring(e.x, e.y, big ? 40 : 26, 'rgba(255,250,240,.92)', big ? 3 : 2, .18); FX.sparks(e.x, e.y, dir, big ? 5 : 3, '#fff6e2'); FX.add({ k: 'num', x: e.x, y: e.y - 18, vy: -120, t: 0, life: .8, txt: (e.h ? 'HEAD ' : '') + e.d, col: p.color }); Audio2.play('hit', e.x, big ? 1 : .7); }
       if (controlledHere(p) && (e.kx || e.ky)) { p.vx = p.vx * .3 + e.kx; p.vy = Math.min(p.vy, 0) + e.ky; p.grounded = false; }
       const w = Weapons.byId[e.wid]; if (p.id === G.myId || e.by === G.myId) { G.hitStop = Math.max(G.hitStop, Math.min((w && w.hitStop) || .02, .018)); G.trauma = Math.min(1, G.trauma + (p.id === G.myId ? .45 : .25)); }
       if (p.id === G.myId) UI.hurt(); break;
@@ -1769,8 +1794,9 @@ function applyEvent(e) {
       FX.ring(e.x, e.y, 60, rgba(p.color, .9), 3, .4); FX.ink(e.x, e.y + 10, 8, p.color, .5); FX.dustPuff(e.x, e.y + HH, 8, 1);
       if (p.id === G.myId) { UI.hudWeapon(true); if (G.phase === 'countdown') UI.reveal(weaponOf(p)); } UI.rosterChanged(); break;
     }
-    case 'arm': if (!p) break; p.wid = e.wid; p.ammo = e.ammo; if (p.id === G.myId) { UI.hudWeapon(true); UI.hint('Out of ammo — fists!', 1.6); } break;
+    case 'arm': if (!p) break; p.wid = e.wid; p.ammo = e.ammo; if (p.id === G.myId) { UI.hudWeapon(true); UI.hint('Weapon changed', 1.6); } break;
     case 'round': {
+      G.gameMode = e.mo || G.gameMode || 'arena'; G.biome = e.bi ?? G.biome ?? 0;
       if (e.seed !== T.seed) { generateMap(e.seed); G.bullets = []; FX.parts = FX.parts.filter(q => q.k === 'num'); }
       G.phase = e.ph; G.phaseEnd = now() + (e.left || 0); G.round = e.n; if (e.sc) for (const [id, s] of e.sc) { const q = G.players.get(id); if (q) q.score = s; }
       if (e.ph === 'countdown') for (const q of G.players.values()) q.alive = false;
@@ -1792,7 +1818,7 @@ function startMenu() {
 }
 async function startHost(opts) {
   stopSession(); resetWorld();
-  G.isHost = true; G.offline = !!opts.offline; G.demo = false; G.roomName = opts.name; G.maxPlayers = opts.max; G.target = opts.target; G.botsWanted = opts.bots; G.public = opts.public !== false;
+  G.isHost = true; G.offline = !!opts.offline; G.demo = false; G.roomName = opts.name; G.maxPlayers = opts.max; G.target = opts.target; G.gameMode = opts.gameMode || 'arena'; G.biomeChoice = opts.biome ?? -1; G.biome = G.biomeChoice < 0 ? (Math.random()*THEMES.length|0) : G.biomeChoice; G.botsWanted = opts.bots; G.public = opts.public !== false;
   if (!G.offline) {
     UI.show('connecting'); $('#connTitle').textContent = 'Opening your room'; $('#connSub').textContent = 'Registering with the matchmaking server…'; $('#connErr').textContent = '';
     try { const { peer, code } = await openHostPeer(); Net.peer = peer; G.code = code; hostWire(peer); }
@@ -1833,8 +1859,8 @@ const UI = {
     const tap = (sel, fn) => $(sel).addEventListener('click', e => { Audio2.init(); Audio2.play('ui'); fn(e); });
     tap('#bHost', () => { $('#roomIn').value = `${this.name}'s room`; $('#hostErr').textContent = ''; this.show('host'); });
     tap('#bBrowse', () => { Lobby.ensure(); this.show('browse'); this.roomsChanged(); });
-    tap('#bPractice', () => startHost({ offline: true, name: 'Practice', max: 6, target: 5, bots: 3 }));
-    tap('#bCreate', () => { const seg = id => $('#' + id + ' .on').textContent; startHost({ offline: false, name: cleanName($('#roomIn').value || `${this.name}'s room`).slice(0, 24) || 'Room', max: +seg('segMax'), target: +seg('segWin'), bots: +seg('segBots'), public: seg('segVis') === 'Public' }); });
+    tap('#bPractice', () => this.show('practice')); 
+    tap('#bCreate', () => { const seg = id => $('#' + id + ' .on').textContent; startHost({ offline: false, name: cleanName($('#roomIn').value || `${this.name}'s room`).slice(0, 24) || 'Room', max: +seg('segMax'), target: +seg('segWin'), bots: +seg('segBots'), gameMode: $('#hostMode').value, biome: +$('#hostBiome').value, public: seg('segVis') === 'Public' }); });
     tap('#bJoinCode', () => startClient($('#codeIn').value));
     $('#codeIn').addEventListener('keydown', e => { if (e.key === 'Enter') startClient($('#codeIn').value); });
     tap('#bRefresh', () => { this.roomsChanged(); if (!Lobby.clients.some(c => c.connected)) { Lobby.started = false; Lobby.clients.forEach(c => { try { c.end(true); } catch (er) { } }); Lobby.clients = []; Lobby.ensure(); } });
@@ -1897,7 +1923,7 @@ const UI = {
     if (this.cur === 'weapons') this.renderWeapons();
   },
   renderWeapons() {
-    const how = Weapons.source; const msg = { 'folder listing': 'Found automatically by reading the weapons/ folder.', 'GitHub repository': 'Found automatically from the GitHub repository behind this page.', 'picked folder': 'Loaded from the folder you picked on this device.', 'from host': 'Supplied by the room host.' }[how] || 'This server does not let pages list folders. Host the game with a folder-listing server or on GitHub Pages, or pick the weapons folder below. See README.';
+    const how = Weapons.source; const msg = { 'manifest': 'Loaded from the static-host manifest.', 'folder listing': 'Found automatically by reading the weapons/ folder.', 'GitHub repository': 'Found automatically from the GitHub repository behind this page.', 'picked folder': 'Loaded from the folder you picked on this device.', 'from host': 'Supplied by the room host.' }[how] || 'This server does not let pages list folders. Host the game with a folder-listing server or on GitHub Pages, or pick the weapons folder below. See README.';
     const cmsg = Chars.list.length ? `Characters: ${Chars.list.map(c => esc(c.name)).join(', ')} — from ${esc(Chars.source)}.` : 'Characters: none found — coloured jelly blobs are used. Drop square PNGs into char/.';
     $('#wSource').innerHTML = esc(msg) + '<br>' + cmsg + (Weapons.log.length ? `<br><small style="color:var(--accent)">${Weapons.log.map(esc).join('<br>')}</small>` : '');
     const items = Weapons.list.length ? Weapons.list : [FISTS];
@@ -1928,7 +1954,7 @@ const UI = {
   reveal(w) { if (G.demo) return; const r = $('#reveal'); r.classList.remove('hidden'); r.innerHTML = `<div class="rc">${imgTag(w)}<b>${esc(w.name)}</b></div>`; clearTimeout(this._rt); this._rt = setTimeout(() => r.classList.add('hidden'), 2300); },
   phase(e) {
     if (G.demo || G.mode !== 'play') return;
-    if (e.ph === 'countdown') { this.banner('Round ' + G.round, 'new map · new weapons', 1.3); Audio2.play('round'); this._count = 3; }
+    if (e.ph === 'countdown') { this.banner('Round ' + G.round, esc(T.theme.name) + (G.gameMode === 'expedition' ? ' · the big wilds' : ' · new weapons'), 1.3); Audio2.play('round'); this._count = 3; }
     else if (e.ph === 'fight' && !e.quiet) { this.banner('Fight', '', .8); Audio2.play('tick'); }
     else if (e.ph === 'over') { const w = G.players.get(e.win); this.banner(w ? (w.id === G.myId ? 'You win' : w.name + ' wins') : 'Draw', w ? `round ${G.round} · ${w.score}/${G.target}` : 'nobody survived', 2.4); if (w && w.id === G.myId) Audio2.play('win'); }
     else if (e.ph === 'champion') { const w = G.players.get(e.win); this.banner(w ? (w.id === G.myId ? 'Champion' : w.name + ' takes it') : 'Match over', `first to ${G.target} · scores reset`, 5); Audio2.play('win'); }
@@ -1955,6 +1981,7 @@ const UI = {
 /* ---------- 14. loop ---------- */
 const STEP = 1 / 60; let lastFrame = performance.now(), acc = 0, manual = false, fpsT = 0, fpsN = 0, hudT = 0;
 function tick(dt) {
+  updateEnvironment(dt); updateWeaponTimers(dt);
   G.time += dt; const me = G.players.get(G.myId);
   if (me) { if (me.alive) { readInput(me); physicsStep(me, dt); } else { Input.attackQueued = null; me.input.jump = false; } }
   for (const p of G.players.values()) {
@@ -1970,7 +1997,7 @@ function tick(dt) {
     hostRules();
     if (!G.offline) {
       if (G.outbox.length) { broadcast({ t: 'e', e: G.outbox }); G.outbox = []; }
-      Net.snapT += dt; if (Net.snapT >= .05) { Net.snapT = 0; broadcast({ t: 's', p: [...G.players.values()].map(p => [p.id, Math.round(p.x), Math.round(p.y), Math.round(p.vx), Math.round(p.vy), Math.round(p.aim * 1000), p.face, p.hp, p.alive ? 1 : 0, p.wid, p.ammo, p.score, p.grounded ? 1 : 0]) }); }
+      Net.snapT += dt; if (Net.snapT >= .05) { Net.snapT = 0; broadcast({ t: 's', p: [...G.players.values()].map(p => [p.id, Math.round(p.x), Math.round(p.y), Math.round(p.vx), Math.round(p.vy), Math.round(p.aim * 1000), p.face, p.hp, p.alive ? 1 : 0, p.wid, p.ammo, p.score, p.grounded ? 1 : 0, p.aiming ? 1 : 0, p.status || {}, p.mag ?? null, Math.max(0,(p.reloadEnd||0)-now())]) }); }
       for (const [k, c] of Net.conns) { const p = G.players.get(c.pid); if (p && now() - p.lastSeen > 15) hostDrop(c.conn); }
     } else G.outbox = [];
   } else if (G.mode === 'play' && Net.hostConn) {
@@ -1983,25 +2010,28 @@ function frame(ts) {
   const dt = Math.min(.1, (ts - lastFrame) / 1000); lastFrame = ts;
   if (!manual) { acc += dt; let n = 0; while (acc >= STEP && n < 5) { tick(STEP); acc -= STEP; n++; } if (n >= 5) acc = 0; }
   processDirtyTerrain(2);
-  render(now());
+  if(G.mode==='play' || R8.menuDirty) { render(now()); R8.menuDirty=false; }
   hudT += dt; if (hudT > .1) { hudT = 0; UI.tickHud(); }
-  fpsT += dt; fpsN++; if (fpsT > 2) { const fps = fpsN / fpsT; fpsT = 0; fpsN = 0; R8.fpsAvg = fps; if (fps < 42 && R8.quality > .6) { R8.quality -= .15; resize(); } }
+  fpsT += dt; fpsN++; if (fpsT > 2) { const fps = fpsN / fpsT; fpsT = 0; fpsN = 0; R8.fpsAvg = fps; adaptQuality(fps); }
   requestAnimationFrame(frame);
 }
 window.advanceTime = ms => { manual = true; const n = Math.max(1, Math.round(ms / (1000 / 60))); for (let i = 0; i < n; i++) tick(STEP); while (T.dirty && T.dirty.length) processDirtyTerrain(32); render(now()); };
 window.render_game_to_text = () => JSON.stringify({
-  coords: 'world 1600x1000, origin top-left, +y down', mode: G.mode, screen: UI.cur, host: G.isHost, offline: G.offline, demo: G.demo, code: G.code, phase: G.phase, round: G.round,
+  coords: `world ${W}x${H}, origin top-left, +y down`, biome: T.theme.name, gameMode:G.gameMode, water:Env.water.length, props:Env.props.length, crates:Env.crates.length, quality:R8.quality, fps:Math.round(R8.fpsAvg), mode: G.mode, screen: UI.cur, host: G.isHost, offline: G.offline, demo: G.demo, code: G.code, phase: G.phase, round: G.round,
   me: (() => { const p = G.players.get(G.myId); return p ? { x: Math.round(p.x), y: Math.round(p.y), vx: Math.round(p.vx), vy: Math.round(p.vy), hp: p.hp, alive: p.alive, weapon: p.wid, ammo: p.ammo, grounded: p.grounded, score: p.score, char: p.char } : null; })(),
   players: [...G.players.values()].map(p => ({ id: p.id, name: p.name, bot: p.isBot, char: p.char, x: Math.round(p.x), y: Math.round(p.y), hp: p.hp, alive: p.alive, weapon: p.wid, score: p.score })),
   bullets: G.bullets.filter(b => !b.dead).length, particles: FX.parts.length, craters: T.craters.length, weapons: Weapons.list.map(w => w.id), weaponSource: Weapons.source,
   characters: Chars.list.map(c => c.id), charSource: Chars.source, lobby: UI.lobbyState, rooms: Lobby.list().map(r => r.code), conns: Net.conns.size, ping: Net.ping
 });
 
+</script>
+<script src="expansion.js"></script>
+<script>
 /* ---------- boot ---------- */
 (async function boot() {
   const dpr = Math.min(window.devicePixelRatio || 1, 2); const q = clamp(Math.round(Math.min(innerWidth / W, innerHeight / H) * dpr * 4) / 4, 1, 1.35);
   terrainInit(q); resize(); addEventListener('resize', () => { resize(); layoutTouch(); });
-  UI.init(); startMenu(); requestAnimationFrame(frame);
+  UI.init(); initExpansionUI(); startMenu(); requestAnimationFrame(frame);
   const wp = discoverWeapons();
   const cp = discoverChars();
   Lobby.ensure(); libPeer();
