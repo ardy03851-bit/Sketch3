@@ -3,262 +3,595 @@
   {
    "id": "acid",
    "js": "acid.js",
-   "png": "acid.png"
+   "png": "acid.png",
+   "files": [
+    "acid.js",
+    "acid.png"
+   ]
+  },
+  {
+   "id": "anchor",
+   "js": "anchor.js",
+   "png": "anchor.png",
+   "files": [
+    "anchor.js",
+    "anchor.png"
+   ]
   },
   {
    "id": "axe",
    "js": "axe.js",
-   "png": "axe.png"
+   "png": "axe.png",
+   "files": [
+    "axe.js",
+    "axe.png"
+   ]
   },
   {
    "id": "bat",
    "js": "bat.js",
-   "png": "bat.png"
+   "png": "bat.png",
+   "files": [
+    "bat.js",
+    "bat.png"
+   ]
   },
   {
    "id": "blunderbuss",
    "js": "blunderbuss.js",
-   "png": "blunderbuss.png"
+   "png": "blunderbuss.png",
+   "files": [
+    "blunderbuss.js",
+    "blunderbuss.png"
+   ]
   },
   {
    "id": "boomerang",
    "js": "boomerang.js",
-   "png": "boomerang.png"
+   "png": "boomerang.png",
+   "files": [
+    "F",
+    "boomerang.js",
+    "boomerang.png"
+   ]
   },
   {
    "id": "bubble",
    "js": "bubble.js",
-   "png": "bubble.png"
+   "png": "bubble.png",
+   "files": [
+    "F",
+    "bubble.js",
+    "bubble.png"
+   ]
   },
   {
    "id": "burstrifle",
    "js": "burstrifle.js",
-   "png": "burstrifle.png"
+   "png": "burstrifle.png",
+   "files": [
+    "burstrifle.js",
+    "burstrifle.png"
+   ]
   },
   {
    "id": "confetti",
    "js": "confetti.js",
-   "png": "confetti.png"
+   "png": "confetti.png",
+   "files": [
+    "confetti.js",
+    "confetti.png"
+   ]
   },
   {
    "id": "crossbow",
    "js": "crossbow.js",
-   "png": "crossbow.png"
+   "png": "crossbow.png",
+   "files": [
+    "crossbow.js",
+    "crossbow.png"
+   ]
   },
   {
    "id": "cryo",
    "js": "cryo.js",
-   "png": "cryo.png"
+   "png": "cryo.png",
+   "files": [
+    "(",
+    "cryo.js",
+    "cryo.png"
+   ]
   },
   {
    "id": "daggers",
    "js": "daggers.js",
-   "png": "daggers.png"
+   "png": "daggers.png",
+   "files": [
+    "daggers.js",
+    "daggers.png"
+   ]
   },
   {
    "id": "derringer",
    "js": "derringer.js",
-   "png": "derringer.png"
+   "png": "derringer.png",
+   "files": [
+    "derringer.js",
+    "derringer.png"
+   ]
   },
   {
    "id": "dollar",
    "js": "script.js",
-   "png": "dollar.png"
+   "png": "dollar.png",
+   "files": [
+    "dollar.png",
+    "script.js"
+   ]
   },
   {
    "id": "firework",
    "js": "firework.js",
-   "png": "firework.png"
+   "png": "firework.png",
+   "files": [
+    "firework.js",
+    "firework.png"
+   ]
   },
   {
    "id": "flamer",
    "js": "flamer.js",
-   "png": "flamer.png"
+   "png": "flamer.png",
+   "files": [
+    "F",
+    "flamer.js",
+    "flamer.png"
+   ]
+  },
+  {
+   "id": "flaregun",
+   "js": "flaregun.js",
+   "png": "flaregun.png",
+   "files": [
+    "flaregun.js",
+    "flaregun.png"
+   ]
   },
   {
    "id": "grenade",
    "js": "grenade.js",
-   "png": "grenade.png"
+   "png": "grenade.png",
+   "files": [
+    "F",
+    "grenade.js",
+    "grenade.png"
+   ]
   },
   {
    "id": "gun",
    "js": "gun.js",
-   "png": "gun.png"
+   "png": "gun.png",
+   "files": [
+    "Hh",
+    "gun.js",
+    "gun.png"
+   ]
   },
   {
    "id": "hammer",
    "js": "hammer.js",
-   "png": "hammer.png"
+   "png": "hammer.png",
+   "files": [
+    "Gg",
+    "hammer.js",
+    "hammer.png"
+   ]
   },
   {
    "id": "handcannon",
    "js": "handcannon.js",
-   "png": "handcannon.png"
+   "png": "handcannon.png",
+   "files": [
+    "handcannon.js",
+    "handcannon.png"
+   ]
   },
   {
    "id": "harpoon",
    "js": "harpoon.js",
-   "png": "harpoon.png"
+   "png": "harpoon.png",
+   "files": [
+    "F",
+    "harpoon.js",
+    "harpoon.png"
+   ]
   },
   {
    "id": "hornet",
    "js": "hornet.js",
-   "png": "hornet.png"
+   "png": "hornet.png",
+   "files": [
+    "hornet.js",
+    "hornet.png"
+   ]
   },
   {
    "id": "inkblot",
    "js": "inkblot.js",
-   "png": "inkblot.png"
+   "png": "inkblot.png",
+   "files": [
+    "inkblot.js",
+    "inkblot.png"
+   ]
   },
   {
    "id": "inksaber",
    "js": "inksaber.js",
-   "png": "inksaber.png"
+   "png": "inksaber.png",
+   "files": [
+    "inksaber.js",
+    "inksaber.png"
+   ]
   },
   {
    "id": "katana",
    "js": "script.js",
-   "png": "IMG_2301.png"
+   "png": "IMG_2301.png",
+   "files": [
+    "IMG_2301.png",
+    "script.js"
+   ]
   },
   {
    "id": "longbow",
    "js": "longbow.js",
-   "png": "longbow.png"
+   "png": "longbow.png",
+   "files": [
+    "longbow.js",
+    "longbow.png"
+   ]
   },
   {
    "id": "mace",
    "js": "mace.js",
-   "png": "mace.png"
+   "png": "mace.png",
+   "files": [
+    "mace.js",
+    "mace.png"
+   ]
   },
   {
    "id": "minigun",
    "js": "minigun.js",
-   "png": "minigun.png"
+   "png": "minigun.png",
+   "files": [
+    "U",
+    "minigun.js",
+    "minigun.png"
+   ]
   },
   {
    "id": "mortar",
    "js": "mortar.js",
-   "png": "mortar.png"
+   "png": "mortar.png",
+   "files": [
+    "mortar.js",
+    "mortar.png"
+   ]
   },
   {
    "id": "nailgun",
    "js": "nailgun.js",
-   "png": "nailgun.png"
+   "png": "nailgun.png",
+   "files": [
+    "nailgun.js",
+    "nailgun.png"
+   ]
+  },
+  {
+   "id": "paintroller",
+   "js": "paintroller.js",
+   "png": "paintroller.png",
+   "files": [
+    "paintroller.js",
+    "paintroller.png"
+   ]
   },
   {
    "id": "pan",
    "js": "pan.js",
-   "png": "pan.png"
+   "png": "pan.png",
+   "files": [
+    "pan.js",
+    "pan.png"
+   ]
+  },
+  {
+   "id": "pepperbox",
+   "js": "pepperbox.js",
+   "png": "pepperbox.png",
+   "files": [
+    "pepperbox.js",
+    "pepperbox.png"
+   ]
   },
   {
    "id": "pickaxe",
    "js": "pickaxe.js",
-   "png": "pickaxe.png"
+   "png": "pickaxe.png",
+   "files": [
+    "pickaxe.js",
+    "pickaxe.png"
+   ]
   },
   {
    "id": "plasma",
    "js": "plasma.js",
-   "png": "plasma.png"
+   "png": "plasma.png",
+   "files": [
+    "plasma.js",
+    "plasma.png"
+   ]
   },
   {
    "id": "railgun",
    "js": "railgun.js",
-   "png": "railgun.png"
+   "png": "railgun.png",
+   "files": [
+    "G",
+    "railgun.js",
+    "railgun.png"
+   ]
   },
   {
    "id": "raypistol",
    "js": "raypistol.js",
-   "png": "raypistol.png"
+   "png": "raypistol.png",
+   "files": [
+    "raypistol.js",
+    "raypistol.png"
+   ]
   },
   {
    "id": "ricochet",
    "js": "ricochet.js",
-   "png": "ricochet.png"
+   "png": "ricochet.png",
+   "files": [
+    "ricochet.js",
+    "ricochet.png"
+   ]
   },
   {
    "id": "rifle",
    "js": "script.js",
-   "png": "IMG_2305.png"
+   "png": "IMG_2305.png",
+   "files": [
+    "IMG_2305.png",
+    "script.js"
+   ]
   },
   {
    "id": "rocket",
    "js": "rocket.js",
-   "png": "rocket.png"
+   "png": "rocket.png",
+   "files": [
+    "C",
+    "rocket.js",
+    "rocket.png"
+   ]
+  },
+  {
+   "id": "rubberchicken",
+   "js": "rubberchicken.js",
+   "png": "rubberchicken.png",
+   "files": [
+    "rubberchicken.js",
+    "rubberchicken.png"
+   ]
   },
   {
    "id": "sawlauncher",
    "js": "sawlauncher.js",
-   "png": "sawlauncher.png"
+   "png": "sawlauncher.png",
+   "files": [
+    "sawlauncher.js",
+    "sawlauncher.png"
+   ]
   },
   {
    "id": "scythe",
    "js": "scythe.js",
-   "png": "scythe.png"
+   "png": "scythe.png",
+   "files": [
+    "F",
+    "scythe.js",
+    "scythe.png"
+   ]
   },
   {
    "id": "shotgun",
    "js": "shotgun.js",
-   "png": "shotgun.png"
+   "png": "shotgun.png",
+   "files": [
+    "D",
+    "shotgun.js",
+    "shotgun.png"
+   ]
+  },
+  {
+   "id": "shovel",
+   "js": "shovel.js",
+   "png": "shovel.png",
+   "files": [
+    "shovel.js",
+    "shovel.png"
+   ]
+  },
+  {
+   "id": "slingshot",
+   "js": "slingshot.js",
+   "png": "slingshot.png",
+   "files": [
+    "slingshot.js",
+    "slingshot.png"
+   ]
   },
   {
    "id": "smg",
    "js": "smg.js",
-   "png": "smg.png"
+   "png": "smg.png",
+   "files": [
+    "smg.js",
+    "smg.png"
+   ]
   },
   {
    "id": "sniper",
    "js": "sniper.js",
-   "png": "sniper.png"
+   "png": "sniper.png",
+   "files": [
+    "F",
+    "sniper.js",
+    "sniper.png"
+   ]
   },
   {
    "id": "snowball",
    "js": "snowball.js",
-   "png": "snowball.png"
+   "png": "snowball.png",
+   "files": [
+    "snowball.js",
+    "snowball.png"
+   ]
   },
   {
    "id": "spear",
    "js": "spear.js",
-   "png": "spear.png"
+   "png": "spear.png",
+   "files": [
+    "spear.js",
+    "spear.png"
+   ]
+  },
+  {
+   "id": "staplegun",
+   "js": "staplegun.js",
+   "png": "staplegun.png",
+   "files": [
+    "staplegun.js",
+    "staplegun.png"
+   ]
   },
   {
    "id": "stickymine",
    "js": "stickymine.js",
-   "png": "stickymine.png"
+   "png": "stickymine.png",
+   "files": [
+    "stickymine.js",
+    "stickymine.png"
+   ]
   },
   {
    "id": "supasword",
    "js": "script.js",
-   "png": "IMG_2303.png"
+   "png": "IMG_2303.png",
+   "files": [
+    "IMG_2303.png",
+    "script.js"
+   ]
   },
   {
    "id": "supergun",
    "js": "script.js",
-   "png": "IMG_2298.png"
+   "png": "IMG_2298.png",
+   "files": [
+    "IMG_2298.png",
+    "script.js"
+   ]
   },
   {
    "id": "superstick",
    "js": "script.js",
-   "png": "IMG_2296.png"
+   "png": "IMG_2296.png",
+   "files": [
+    "IMG_2296.png",
+    "script.js"
+   ]
   },
   {
    "id": "sword",
    "js": "sword.js",
-   "png": "sword.png"
+   "png": "sword.png",
+   "files": [
+    "Hh",
+    "sword.js",
+    "sword.png"
+   ]
   },
   {
    "id": "tesla",
    "js": "tesla.js",
-   "png": "tesla.png"
+   "png": "tesla.png",
+   "files": [
+    "F",
+    "tesla.js",
+    "tesla.png"
+   ]
+  },
+  {
+   "id": "tomato",
+   "js": "tomato.js",
+   "png": "tomato.png",
+   "files": [
+    "tomato.js",
+    "tomato.png"
+   ]
   },
   {
    "id": "toolbox",
    "js": "toolbox.js",
-   "png": "toolbox.png"
+   "png": "toolbox.png",
+   "files": [
+    "toolbox.js",
+    "toolbox.png"
+   ]
+  },
+  {
+   "id": "trident",
+   "js": "trident.js",
+   "png": "trident.png",
+   "files": [
+    "trident.js",
+    "trident.png"
+   ]
+  },
+  {
+   "id": "trumpet",
+   "js": "trumpet.js",
+   "png": "trumpet.png",
+   "files": [
+    "trumpet.js",
+    "trumpet.png"
+   ]
+  },
+  {
+   "id": "umbrella",
+   "js": "umbrella.js",
+   "png": "umbrella.png",
+   "files": [
+    "umbrella.js",
+    "umbrella.png"
+   ]
   },
   {
    "id": "voidgun",
    "js": "voidgun.js",
-   "png": "voidgun.png"
+   "png": "voidgun.png",
+   "files": [
+    "F",
+    "voidgun.js",
+    "voidgun.png"
+   ]
   }
  ]
 }

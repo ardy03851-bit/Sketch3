@@ -5,13 +5,14 @@
 // ============================================================
 Weapon({
 name: "Tool Box", type: "melee", rarity: "epic",
-  description: "Build with planks, beams, stone, glass, bulbs, springs and TNT. Dig and fill the ground. 1-0 picks, Q/E rotates.",
+  description: "Build walls, ladders, torches, banners, campfires, spikes, springs and TNT. Dig, fill, repair and recycle. Tab switches tab, 1-0 picks, Q/E rotates.",
   weight: 0.8,
 
   tool: true,                       // turns the weapon into the build tool (click = place / dig)
-  tools: ["plank", "beam", "wall", "metal", "glass", "bulb", "spring", "tnt", "dig", "fill"],
+  tools: ["plank", "beam", "wall", "brick", "crate", "sandbag", "metal", "glass", "ladder", "bulb", "torch", "banner", "campfire", "spring", "spikes", "tnt", "dig", "fill", "repair", "recycle"],
   materials: 40,                    // materials per life (each piece costs 1-3)
   modes: ["expedition"],            // only in The Big Wilds
+  sets: ["main", "event"],          // also shows up on the event page (see README: event content)
   roundChance: 0.5,                 // appears in about half of the matches (one guaranteed drop)
 
   damage: 12, knockback: 300,

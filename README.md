@@ -42,6 +42,14 @@ You never edit `index.html` to add a weapon. Drop a new folder into `weapons/` a
 14. [How the code is laid out](#how-the-code-is-laid-out)
 15. [Troubleshooting](#troubleshooting)
 16. [Expansion: worlds, modes and weapon mechanics](#expansion-worlds-modes-and-weapon-mechanics)
+17. [Content folders at a glance](#content-folders-at-a-glance)
+18. [Adding weapons (the full guide)](#adding-weapons-the-full-guide)
+19. [Adding biomes](#adding-biomes)
+20. [The main menu folder](#the-main-menu-folder)
+21. [The event page (weapons2 and biomes2)](#the-event-page-weapons2-and-biomes2)
+22. [Setting up a game: flat or normal maps](#setting-up-a-game-flat-or-normal-maps)
+23. [Building in War mode](#building-in-war-mode)
+24. [The Halloween update](#the-halloween-update)
 
 ---
 
@@ -506,7 +514,7 @@ Adaptive mode starts from a guess based on the device (cores, memory, screen siz
 
 ### Hosting without folder listings
 
-Run `python3 tools/make-manifest.py` after adding weapons or characters. It writes `weapons/manifest.json` and `char/manifest.json`, which the game reads on hosts like Netlify or Vercel.
+Run `python3 tools/make-manifest.py` after adding weapons, biomes or characters. It writes `weapons/manifest.json`, `weapons2/manifest.json`, `biomes/manifest.json`, `biomes2/manifest.json` and `char/manifest.json`, which the game reads on hosts like Netlify or Vercel (and on GitHub Pages when the GitHub API is busy).
 
 
 ---
@@ -572,3 +580,235 @@ Extra weapon fields used by the build system:
 | `modes: ["expedition"]` | Only appears in these modes |
 | `roundChance` | Fraction of matches the weapon is available in (one drop is guaranteed in those matches) |
 | `propDamage` | Damage multiplier against built pieces |
+
+---
+
+## Content folders at a glance
+
+Everything you add lives in its own folder. The game finds the folders by itself, so **you never edit `index.html` to add content**.
+
+| Folder | What goes in it | Shown on |
+| --- | --- | --- |
+| `weapons/<id>/` | `<id>.js` + `<id>.png` — one weapon | normal menu |
+| `weapons2/<id>/` | the same thing, for event weapons | event page |
+| `biomes/<id>/` | `<id>.js` + any images it uses — one biome | normal menu |
+| `biomes2/<id>/` | the same thing, for event biomes | event page |
+| `mainmenu/` | `bg.png`, `maintitle.png` — the main menu art | main menu |
+| `mainmenu/event/` | `bg.png`, `maintitle.png`, `event.json` — the event page art and text | event page |
+| `char/` | character PNGs | both |
+
+After adding or removing a folder, run `python3 tools/make-manifest.py` once and commit. It writes a `manifest.json` into each content folder. GitHub Pages can't list folders, so the game first asks the GitHub API for the repository tree and falls back to these manifest files when the API is busy (it allows 60 requests an hour per network).
+
+---
+
+## Adding weapons (the full guide)
+
+### The short version
+
+1. Make a folder: `weapons/frying-pan/` (the folder name is the weapon's id — lowercase, no spaces).
+2. Draw the weapon and save it as `weapons/frying-pan/frying-pan.png` (transparent background, pointing to the right, handle on the left).
+3. Write `weapons/frying-pan/frying-pan.js`:
+
+```js
+Weapon({
+  name: "Frying Pan", type: "melee", rarity: "uncommon",
+  description: "Bonk.",
+  damage: 26, knockback: 520, swingTime: 0.18, cooldown: 0.3, reach: 92, arc: 150,
+  sound: { type: "clang", pitch: 1.1 },
+  sprite: { length: 80, gripX: 0.12, gripY: 0.5, holdDistance: 12 }
+});
+```
+
+4. Run `python3 tools/make-manifest.py`, commit, push. Refresh the game and the pan is in the random pool.
+
+### Normal weapons vs event weapons
+
+- `weapons/` — the normal pool, used by every game started from the main menu.
+- `weapons2/` — the event pool, used by games started from the event page (the orange arrow on the main menu). It works exactly like `weapons/`: same folder layout, same script, same PNG rules.
+- If `weapons2/` has a folder with the same name as one in `weapons/`, the event one is renamed `ev-<id>` so both exist.
+- If the event pool is empty, event games fall back to the normal weapons.
+- To put one weapon in both pools, add `sets: ["main", "event"]` to its script.
+
+### Every field
+
+All fields are optional except `name`; anything you leave out gets a sensible default. The complete list with comments lives in `weapons/gun/gun.js` (guns) and the [Weapon script reference](#weapon-script-reference) above. The most useful ones:
+
+| Field | Meaning |
+| --- | --- |
+| `name`, `description` | shown on the weapon card |
+| `type` | `"gun"` or `"melee"` |
+| `rarity` | `common`, `uncommon`, `rare`, `epic`, `legendary` — card colour and roll chance |
+| `weight` | how often it rolls compared with others (1 = normal, 0 = never random) |
+| `damage`, `knockback` | per hit |
+| `fireRate`, `ammo`, `automatic`, `bullets`, `spread`, `recoil`, `bulletSpeed`, `bulletGravity`, `range`, `bounces`, `headshot` | guns |
+| `swingTime`, `cooldown`, `reach`, `arc`, `lunge`, `deflect`, `combo` | melee |
+| `destruction` | `{ crater, jagged, debris, dust, scorch, dent }` — what it does to the ground |
+| `vfx` | `{ trail, trailWidth, sparks, light, muzzle }` — look and feel |
+| `sound` | `{ type, pitch, volume }`; types: shot, swing, punch, hit, clang, impact, debris, tink, boing, whoosh, ... |
+| `shake`, `hitStop` | screen shake and the tiny freeze on hit |
+| `modes` | e.g. `["expedition"]` — only roll in those modes |
+| `roundChance` | e.g. `0.3` — only appears in 30% of rounds |
+| `sprite` | `{ length, gripX, gripY, muzzleX, muzzleY, holdDistance }` — how the PNG is held (0–1 across the image) |
+| `onHit(e, api)`, `onFire(e, api)`, `onImpact(e, api)` | scripting hooks, see [Scripting hooks](#scripting-hooks) |
+
+### Tips
+
+- Keep the PNG in the ink style (thick dark outline, flat fills, one light highlight). Around 200–400 px wide is plenty.
+- If the script has a typo the game still loads; the weapon uses default stats and the error is printed in the browser console. Watch out for a comment eating a comma: `onHit(e, api) { ... } // note,` breaks the next line — put the comma before the `//`.
+
+---
+
+## Adding biomes
+
+Biomes work the same way as weapons: one folder, one script, the game finds it.
+
+1. Make a folder: `biomes/frosty-pier/`.
+2. Write `biomes/frosty-pier/frosty-pier.js`. Copy any existing biome (they're all in `biomes/`) and change it — every built-in biome lives there now, unchanged, so they're good templates.
+3. Run `python3 tools/make-manifest.py`, commit, push.
+
+Event biomes go in `biomes2/` instead and only appear on the event page.
+
+```js
+Biome({
+  order: 450,              // position in the world list (lower first)
+  name: "Frosty Pier",
+  style: "sea",            // 'float' islands, 'ground' one big field, 'sea' islands in water
+  weather: "snow",
+  wind: 20,
+  skyT: "#bcd6ea", skyB: "#eef4f8", sun: "#ffffff",
+  far: ["#a9c2d4", "#8aa6ba"],
+  top: "#e9f1f5", mid: "#8c9aa6", deep: "#4c5864", cap: "#ffffff",
+  water: "#6f9cb8",
+  props: [["snowpine", 1], ["rock", 0.3], ["barrel", 0.1]],
+  bgTrees: "snowpines",
+  cloud: "#ffffff",
+  grass: 0
+});
+```
+
+### Every biome field
+
+| Field | Meaning |
+| --- | --- |
+| `order` | sort order in menus (built-ins use 100–3300; event ones 100–300) |
+| `name` | shown in menus (max 28 characters) |
+| `id` | optional; defaults to the folder name |
+| `style` | `float`, `ground` or `sea` |
+| `weather` | `none`, `dust`, `leaves`, `embers`, `rain`, `drizzle`, `storm`, `sparkle`, `fog`, `snow`, `fireflies`, `ash`, `sand`, `petals` |
+| `wind` | sideways push on particles and bullets |
+| `skyT`, `skyB` | sky colour at the top and at the horizon |
+| `sun`, `sunKind`, `sunLow` | sun colour; `sunKind: "moon"` or `"none"`; `sunLow: true` puts it near the horizon |
+| `far` | two colours for the distant hills |
+| `top`, `mid`, `deep`, `cap` | ground colours: grass, dirt, deep rock, edge highlight |
+| `water`, `shallow` | sea / pond colours |
+| `props` | `[kind, howCommon]` pairs for things on the ground (trees, rocks, ...) |
+| `under` | small plants drawn under the trees |
+| `bgTrees` | silhouettes behind the map: `none pines oaks dead palms autumn snowpines volcano mesas cherry harbor bamboo acacias birches willows crystals shrooms graves ruins lavrows` |
+| `cloud` | cloud colour |
+| `grass`, `grassCol` | grass amount (0–1.5) and its two colours |
+| `leaf`, `leafTone` | falling-leaf colours / tint for tree leaves |
+| `pits`, `puddles`, `pond` | holes, puddles, a big pond |
+| `critters` | little animals wandering around |
+| `treeDensity`, `plantDensity` | multipliers (1 = normal) |
+| `night`, `dark`, `fog`, `haze`, `overcast` | lighting moods (`dark` 0–1) |
+| `icy`, `swamp`, `lava`, `lavaPools`, `crystal` | special ground behaviour |
+| `newProps` | new kinds of props this biome brings (below) |
+
+Built-in prop kinds you can use in `props` and `under`: `oak autumn cherry birch willow acacia baobab pine snowpine palm dead bamboo giantshroom cactus bush fern reeds lavender flowers tallgrass mushroom pumpkin rock gravestone pillar crystal barrel crate lamp lantern sunflower scarecrow`.
+
+### New props: an image or ink art
+
+A biome can bring its own props. Use a PNG from the biome folder:
+
+```js
+newProps: {
+  icecube: { image: "icecube.png", w: 40, mat: "crystal", hp: 30 }
+}
+```
+
+`h` is worked out from the image if you leave it out. Or draw it with the game's ink helpers (look at `biomes/sunflower-hills/sunflower-hills.js` and `biomes2/pumpkin-patch/pumpkin-patch.js`):
+
+```js
+newProps: {
+  lamp2: { w: 20, h: 60, mat: "metal", hp: 60, art(sp, d) { /* inkPiece(sp, {...}) */ } }
+}
+```
+
+Prop fields: `w`, `h`, `mat` (`wood`, `plank`, `stone`, `crystal`, `metal`, `leaf`), `hp`, `tree: 1` (counts as a tree for the tree settings and chopping), `solid` (you can stand on it), `small: 1`, `leafy: 1`. Once a prop is registered, any biome can use it.
+
+One file can call `Biome({...})` more than once; the extra biomes get ids like `frosty-pier-2`.
+
+---
+
+## The main menu folder
+
+`mainmenu/` holds the main menu art. Swap the files to restyle the menu — no code changes:
+
+| File | What it is |
+| --- | --- |
+| `mainmenu/bg.png` | the full-screen background (slowly drifts). 1600×900 or bigger. |
+| `mainmenu/maintitle.png` | the game title on the top-left. Transparent PNG, about 3:1. If it's missing the drawn text logo is used. |
+| `mainmenu/event/bg.png` | the event page background |
+| `mainmenu/event/maintitle.png` | the event version of the title |
+| `mainmenu/event/event.json` | the event's name and colours |
+
+`event.json`:
+
+```json
+{
+  "name": "Halloween",
+  "icon": "🎃",
+  "tagline": "pumpkins, ghosts and a very spooky drawer of weapons",
+  "accent": "#ff8a2a",
+  "accent2": "#8d4bd6",
+  "title": "maintitle.png",
+  "bg": "bg.png"
+}
+```
+
+`accent` colours the main button, `accent2` the second one. For Christmas, replace the two PNGs, change the json, and fill `weapons2/` and `biomes2/` with festive content.
+
+---
+
+## The event page (weapons2 and biomes2)
+
+The orange arrow on the right of the main menu turns the page (a 3D page flip) to the event page. Games started there use only `weapons2/` and `biomes2/` — a completely separate set — while everything else (modes, rules, multiplayer) works the same. Online rooms remember which set they use, so friends joining an event room get the event weapons and biomes. The arrow on the event page flips back.
+
+---
+
+## Setting up a game: flat or normal maps
+
+Play and Host online open one setup screen with three tabs:
+
+- **Mode & map** — Arena, Big Wilds or War; **Terrain: Normal hills or Flat**; map size for the bigger modes; the world (or Random).
+- **Players** — bots, bot skill, first to, teams, max players, room name and visibility.
+- **Rules** — health, round time, sudden death, drops, weapon pool, friendly fire, storm, War tickets and build time.
+
+Flat maps are one long level field (no pits or islands), great for big War battles and building. They work in every mode and every size. Your last setup is remembered.
+
+---
+
+## Building in War mode
+
+Press **B** (or tap the **Build** button on iPad) to take out the build kit. Tap **Done ✕** to put it away — the button is big and at the top of the screen on touch devices.
+
+- Tabs: **Build** (plank, beam, stone, brick, crate, sandbags, metal, glass, ladder), **Gadgets** (bulb, torch, banner, campfire, spring, spikes, TNT), **Tools** (dig, fill, repair, recycle). Tab / Shift+Tab switches tabs, 1–9 pick a piece.
+- **Snap** lines pieces up with their neighbours (on by default). Q/E or the mouse wheel rotate; on iPad tap the angle chip to flip between 0° and 90°.
+- On iPad, tap the right half of the screen where you want the piece.
+- **Ladders** — hold jump to climb, down to slide.
+- **Banners** — your team respawns near its banners.
+- **Campfires** heal teammates nearby, **spikes** hurt enemies standing on them.
+- **Repair** patches a damaged piece; **Recycle** gives back the full cost of an undamaged piece (half if it's damaged).
+
+---
+
+## The Halloween update
+
+- New main menu: background art, a new title, the buttons on the left, smooth animated transitions. Fixed the menu animations playing far too fast on devices with "reduce motion" on.
+- Event page with its own Halloween title, animated bats and fog, and its own weapons and biomes.
+- 12 new weapons (Anchor, Flare Gun, Paint Roller, Pepperbox, Rubber Chicken, Shovel, Slingshot, Staple Gun, Tomato Launcher, Trident, Brass Blaster, Brolly) and 8 event weapons (Bat Cage, Femur Club, Witch Broom, Candy Corn SMG, Ecto Blaster, Pumpkin Launcher, Reaper Sickle, Skull Cannon).
+- New biomes: Misty Highlands, Coral Shallows, Sunflower Hills, Starfall Plateau; event biomes Pumpkin Patch, Graveyard Fog, Witchwood.
+- Flat maps for every mode and size; one tidy setup screen.
+- Much more building, an easier build bar on iPad, and no more accidental zooming when tapping fast.
+- Multiplayer: fixed friends failing to join big maps (the map was sent in one message that was too large; it's now split into parts).
+- Faster drawing of physics debris and lights so big War matches stay smooth.

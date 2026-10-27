@@ -87,8 +87,11 @@ generateMap = function (seed) {
   setWorldSize(bw, bh); const sx = W / 1600;
   const R = rng(seed); T.seed = seed; T.theme = th; T.craters = []; T.dirty = []; Env.water = []; Env.props = []; Env.crates = []; Env.bolts = []; Env.ripples = []; Env.wind = th.wind || 0; Env.zone = null;
   const mc = T.mctx; mc.setTransform(1, 0, 0, 1, 0, 0); mc.globalCompositeOperation = 'source-over'; mc.clearRect(0, 0, T.mask.width, T.mask.height); mc.setTransform(T.Q, 0, 0, T.Q, 0, 0); mc.fillStyle = '#fff';
-  const style = th.style || 'float'; const basins = [];
-  if (style === 'sea') {
+  const flat = !!(G.opts && G.opts.terrain === 'flat'); const style = flat ? 'flat' : th.style || 'float'; const basins = [];
+  if (flat) {
+    // Flat maps: one long, level field (a tiny hand-drawn wobble so it still looks inked)
+    const base = H - 300; fillShape(mc, groundPoly(-60, W + 60, base, 3, seed, H + 140)); rebuildGridFromMask();
+  } else if (style === 'sea') {
     const sea = H - 235; const n = Math.round(3 * sx); const margin = 40 * sx; const span = (W - margin * 2) / n; let x = margin;
     for (let i = 0; i < n; i++) { const w = span * (.66 + R() * .2), xx = x + R() * (span - w); fillShape(mc, seaIsland(xx, xx + w, sea - 45 - R() * 90, seed + i * 13, H + 120)); x += span; }
     if (big) platformTiers(R, mc, seed, sea - 120, 240); else { for (let i = 0; i < 3; i++) { const w = 130 + R() * 160, px = 80 + R() * (W - 160 - w), py = 260 + R() * (sea - 520); fillShape(mc, islandPoly(R, px, px + w, py, 55 + R() * 50, seed + 60 + i, true)); } }
@@ -112,7 +115,7 @@ generateMap = function (seed) {
   }
   // boulders (the original look)
   rebuildGridFromMask();
-  const nB = Math.round(4 * sx); for (let i = 0; i < nB; i++) { const bx = 120 + R() * (W - 240); const sy = surfaceFromGrid(bx); if (sy == null || basins.some(b => Math.abs(b.x - bx) < b.rx + 40)) continue; if (style === 'sea' && sy > Env.water[0].level - 20) continue; const r = 16 + R() * 22; const pts = []; for (let k = 0; k < 10; k++) { const a = k / 10 * TAU; const rr = r * (1 + (R() - .5) * .35); pts.push([bx + Math.cos(a) * rr * 1.25, sy + 6 + Math.sin(a) * rr]); } fillShape(mc, pts); }
+  const nB = flat ? 0 : Math.round(4 * sx); for (let i = 0; i < nB; i++) { const bx = 120 + R() * (W - 240); const sy = surfaceFromGrid(bx); if (sy == null || basins.some(b => Math.abs(b.x - bx) < b.rx + 40)) continue; if (style === 'sea' && sy > Env.water[0].level - 20) continue; const r = 16 + R() * 22; const pts = []; for (let k = 0; k < 10; k++) { const a = k / 10 * TAU; const rr = r * (1 + (R() - .5) * .35); pts.push([bx + Math.cos(a) * rr * 1.25, sy + 6 + Math.sin(a) * rr]); } fillShape(mc, pts); }
   rebuildGridFromMask();
   for (const b of basins) Env.water.push(makeBasinWater(b, th));
   buildTexture(R); buildBackground(R); placeProps(rng(seed + 77), th); rebuildTerrainFull(); freeBuildBuffers(); buildMiniMap(); Weather.setup(th);
@@ -769,7 +772,7 @@ drawParticles = function (c, layer) {
     else if (p.k === 'leaf' && visibleWorld(p.x, p.y, 10)) { const k = p.t / p.life; c.globalAlpha = k > .8 ? (1 - k) / .2 : 1; c.fillStyle = p.color; c.beginPath(); c.ellipse(p.x, p.y, p.r, p.r * .45 * Math.abs(Math.cos(p.rot)) + .8, p.rot, 0, TAU); c.fill(); c.globalAlpha = 1; } }
 };
 function drawEmbers(c) { const spr = softSprite('rgba(255,150,60,1)'); for (const p of FX.parts) { if (p.k !== 'ember' || !visibleWorld(p.x, p.y, 20)) continue; const k = p.t / p.life; c.globalAlpha = (1 - k) * .9; const r = p.r * (1.6 - k); c.drawImage(spr, p.x - r * 2, p.y - r * 2, r * 4, r * 4); } c.globalAlpha = 1; }
-function drawRipples(c) { if (!Env.ripples.length) return; c.strokeStyle = 'rgba(255,255,250,.55)'; c.lineWidth = 1; c.beginPath(); let k = 0; for (const r of Env.ripples) { r.t += 1 / 60; if (r.t > .5) continue; Env.ripples[k++] = r; if (!visibleWorld(r.x, r.y, 10)) continue; const s = 2 + r.t * 22; c.moveTo(r.x + s, r.y); c.ellipse(r.x, r.y, s, s * .25, 0, 0, TAU); } Env.ripples.length = Math.min(k, 80); c.stroke(); }
+function drawRipples(c) { if (!Env.ripples.length) return; c.strokeStyle = 'rgba(255,255,250,.55)'; c.lineWidth = 1; c.beginPath(); let k = 0; for (const r of Env.ripples) { r.t += R8.rdt || 1 / 60; if (r.t > .5) continue; Env.ripples[k++] = r; if (!visibleWorld(r.x, r.y, 10)) continue; const s = 2 + r.t * 22; c.moveTo(r.x + s, r.y); c.ellipse(r.x, r.y, s, s * .25, 0, 0, TAU); } Env.ripples.length = Math.min(k, 80); c.stroke(); }
 function drawLavaGlow(c, t) { for (const b of Env.water) { if (!b.alive || !b.lava) continue; const w = b.x1 - b.x0, cx = (b.x0 + b.x1) / 2; c.globalAlpha = .45 + .1 * Math.sin(t * 2); c.drawImage(softSprite('rgba(255,120,40,1)'), cx - w * .8, b.level - w * .45, w * 1.6, w * .9); } c.globalAlpha = 1; }
 function drawOffscreenArrows(c) {
   if (G.gameMode !== 'expedition') return; const m = 26; for (const p of G.players.values()) { if (!p.alive || p.id === G.myId) continue; const [sx, sy] = toScreen(p.x, p.y); if (sx > 0 && sx < R8.cw && sy > 0 && sy < R8.ch) continue;
@@ -779,7 +782,7 @@ let lastRenderT = 0;
 const _render = render;
 render = function (t) {
   if (G.mode !== 'play') return _render(t);
-  const dt = clamp(t - lastRenderT, 0, .1); lastRenderT = t; const c = ctx; const d = R8.dpr; c.setTransform(d, 0, 0, d, 0, 0);
+  const dt = clamp(t - lastRenderT, 0, .1); lastRenderT = t; R8.rdt = dt; const c = ctx; const d = R8.dpr; c.setTransform(d, 0, 0, d, 0, 0);
   layoutCamera(dt); const V = currentView(); const th = T.theme; const big = G.gameMode === 'expedition';
   const skyKey = th.skyT + '|' + th.skyB + '|' + R8.ch; if (R8.skyKey !== skyKey) { const sk = c.createLinearGradient(0, 0, 0, R8.ch); sk.addColorStop(0, shade(th.skyT, .08)); sk.addColorStop(1, shade(th.skyB, -.12)); R8.skyGrad = sk; R8.skyKey = skyKey; }
   c.fillStyle = R8.skyGrad; c.fillRect(0, 0, R8.cw, R8.ch);

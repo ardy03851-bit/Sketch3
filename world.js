@@ -442,7 +442,7 @@ const MAT = { wood: { e: .22, mu: .7, rho: 1, float: 1 }, leaf: { e: .1, mu: .9,
 Env.bodies = [];
 const Bodies = {
   get list() { return Env.bodies; },
-  max() { return Math.round(60 + 100 * clamp(R8.fxScale || .6, 0, 1)); },
+  max() { const n = G.players.size; return Math.round((60 + 100 * clamp(R8.fxScale || .6, 0, 1)) * (n > 40 ? .55 : n > 20 ? .75 : 1)); },
   clear() { Env.bodies = []; },
   /* piece: from cutPiece. k: world units per piece px. (wx,wy): world position of the piece centroid. */
   add(piece, k, wx, wy, a, fs, mat, o = {}) {
@@ -509,7 +509,20 @@ const Bodies = {
     if (Math.hypot(b.vx, b.vy) < 60 && Math.abs(b.va) < .8) { b.rest += dt; if (b.rest > .3) { b.awake = false; b.vx = b.vy = b.va = 0; } } else b.rest = Math.max(0, b.rest - dt * .5);
   },
   draw(c, V) {
-    for (const b of Env.bodies) { if (b.x + b.r < V.x0 || b.x - b.r > V.x1 || b.y + b.r < V.y0 || b.y - b.r > V.y1) continue; c.save(); c.translate(b.x, b.y); c.rotate(b.a); if (b.fs < 0) c.scale(-1, 1); if (b.alpha < 1) c.globalAlpha = Math.max(0, b.alpha); const k = b.k; c.drawImage(b.img, -b.pcx * k, -b.pcy * k, b.pw * k, b.ph * k); c.restore(); }
+    const L = Env.bodies; if (!L.length) return; const M0 = c.getTransform(); const s = Math.hypot(M0.a, M0.b) || 1; const lowQ = (R8.fxScale ?? 1) < .5;
+    for (const b of L) {
+      if (b.alpha <= .02 || b.x + b.r < V.x0 || b.x - b.r > V.x1 || b.y + b.r < V.y0 || b.y - b.r > V.y1) continue;
+      if (lowQ && b.r < 5) continue;
+      // big sprite canvases are drawn shrunk every frame, which is slow on weak GPUs: keep a copy at screen resolution
+      let img = b.img, k = b.k; const need = s * 1.15;
+      if (1 / k > need * 1.3 && b.pw * b.ph > 900) {
+        if (!b.lo || Math.abs(b.lo.s - need) / need > .35) { const f = need * k; const w = Math.max(2, Math.ceil(b.pw * f)), h = Math.max(2, Math.ceil(b.ph * f)); const cc = b.lo && b.lo.c.width === w && b.lo.c.height === h ? b.lo.c : mkCanvas(w, h); const x = cc.getContext('2d'); x.clearRect(0, 0, w, h); x.drawImage(b.img, 0, 0, w, h); b.lo = { c: cc, s: need, f }; }
+        img = b.lo.c; }
+      const ca = Math.cos(b.a), sa = Math.sin(b.a), fs = b.fs < 0 ? -1 : 1;
+      c.setTransform(M0.a * ca * fs + M0.c * sa * fs, M0.b * ca * fs + M0.d * sa * fs, -M0.a * sa + M0.c * ca, -M0.b * sa + M0.d * ca, M0.a * b.x + M0.c * b.y + M0.e, M0.b * b.x + M0.d * b.y + M0.f);
+      c.globalAlpha = b.alpha < 1 ? Math.max(0, b.alpha) : 1; c.drawImage(img, -b.pcx * k, -b.pcy * k, b.pw * k, b.ph * k);
+    }
+    c.setTransform(M0); c.globalAlpha = 1;
   }
 };
 

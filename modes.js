@@ -61,6 +61,7 @@ findSpawns = function (n, R = Math.random) {
 };
 function teamRegion(t) { const n = teamCount(); const w = W / n; return [w * (t - 1), w * t]; }
 function teamSpot(t) {
+  if (warOn() && G.phase === 'fight' && typeof Build !== 'undefined' && Build.spec.banner.size && Math.random() < .75) { const own = [...Build.spec.banner].filter(pc => pc.team === t && !pc.dead); if (own.length) { const pc = own[Math.random() * own.length | 0]; for (let i = 0; i < 6; i++) { const x = pc.x + (Math.random() - .5) * 50, y = pc.bb[3] - HH - 2; if (!solidRect(x - HW, y - HH, x + HW, y + HH - 2)) return [x, y]; } } }
   const [a, b] = teamRegion(t); const war = warOn(); const base = war && G.bases[t]; const mid = base ? base.x : (a + b) / 2; const spread = war ? Math.min(260, (b - a) * .3) : (b - a) * .42;
   for (let i = 0; i < 40; i++) { const x = clamp(mid + (Math.random() - .5) * 2 * spread, a + 40, b - 40); const s = spawnOk(x); if (s) return s; }
   return null;

@@ -1,0 +1,252 @@
+{
+ "biomes": [
+  {
+   "id": "autumn-woods",
+   "js": "autumn-woods.js",
+   "png": null,
+   "files": [
+    "autumn-woods.js"
+   ]
+  },
+  {
+   "id": "bamboo-valley",
+   "js": "bamboo-valley.js",
+   "png": null,
+   "files": [
+    "bamboo-valley.js"
+   ]
+  },
+  {
+   "id": "birch-grove",
+   "js": "birch-grove.js",
+   "png": null,
+   "files": [
+    "birch-grove.js"
+   ]
+  },
+  {
+   "id": "cherry-blossom",
+   "js": "cherry-blossom.js",
+   "png": null,
+   "files": [
+    "cherry-blossom.js"
+   ]
+  },
+  {
+   "id": "coral-shallows",
+   "js": "coral-shallows.js",
+   "png": null,
+   "files": [
+    "coral-shallows.js"
+   ]
+  },
+  {
+   "id": "crystal-hollow",
+   "js": "crystal-hollow.js",
+   "png": null,
+   "files": [
+    "crystal-hollow.js"
+   ]
+  },
+  {
+   "id": "desert-oasis",
+   "js": "desert-oasis.js",
+   "png": null,
+   "files": [
+    "desert-oasis.js"
+   ]
+  },
+  {
+   "id": "dust-bowl",
+   "js": "dust-bowl.js",
+   "png": null,
+   "files": [
+    "dust-bowl.js"
+   ]
+  },
+  {
+   "id": "ember-hollow",
+   "js": "ember-hollow.js",
+   "png": null,
+   "files": [
+    "ember-hollow.js"
+   ]
+  },
+  {
+   "id": "glacier-peaks",
+   "js": "glacier-peaks.js",
+   "png": null,
+   "files": [
+    "glacier-peaks.js"
+   ]
+  },
+  {
+   "id": "haunted-hill",
+   "js": "haunted-hill.js",
+   "png": null,
+   "files": [
+    "haunted-hill.js"
+   ]
+  },
+  {
+   "id": "lavender-fields",
+   "js": "lavender-fields.js",
+   "png": null,
+   "files": [
+    "lavender-fields.js"
+   ]
+  },
+  {
+   "id": "midnight-harbor",
+   "js": "midnight-harbor.js",
+   "png": null,
+   "files": [
+    "midnight-harbor.js"
+   ]
+  },
+  {
+   "id": "misty-highlands",
+   "js": "misty-highlands.js",
+   "png": null,
+   "files": [
+    "misty-highlands.js"
+   ]
+  },
+  {
+   "id": "moss-garden",
+   "js": "moss-garden.js",
+   "png": null,
+   "files": [
+    "moss-garden.js"
+   ]
+  },
+  {
+   "id": "mushroom-grove",
+   "js": "mushroom-grove.js",
+   "png": null,
+   "files": [
+    "mushroom-grove.js"
+   ]
+  },
+  {
+   "id": "night-swamp",
+   "js": "night-swamp.js",
+   "png": null,
+   "files": [
+    "night-swamp.js"
+   ]
+  },
+  {
+   "id": "pine-forest",
+   "js": "pine-forest.js",
+   "png": null,
+   "files": [
+    "pine-forest.js"
+   ]
+  },
+  {
+   "id": "rainy-meadow",
+   "js": "rainy-meadow.js",
+   "png": null,
+   "files": [
+    "rainy-meadow.js"
+   ]
+  },
+  {
+   "id": "sandstorm-canyon",
+   "js": "sandstorm-canyon.js",
+   "png": null,
+   "files": [
+    "sandstorm-canyon.js"
+   ]
+  },
+  {
+   "id": "savanna-sunset",
+   "js": "savanna-sunset.js",
+   "png": null,
+   "files": [
+    "savanna-sunset.js"
+   ]
+  },
+  {
+   "id": "slate-cliffs",
+   "js": "slate-cliffs.js",
+   "png": null,
+   "files": [
+    "slate-cliffs.js"
+   ]
+  },
+  {
+   "id": "snowfield",
+   "js": "snowfield.js",
+   "png": null,
+   "files": [
+    "snowfield.js"
+   ]
+  },
+  {
+   "id": "starfall-plateau",
+   "js": "starfall-plateau.js",
+   "png": null,
+   "files": [
+    "starfall-plateau.js"
+   ]
+  },
+  {
+   "id": "sunflower-hills",
+   "js": "sunflower-hills.js",
+   "png": null,
+   "files": [
+    "sunflower-hills.js"
+   ]
+  },
+  {
+   "id": "sunken-ruins",
+   "js": "sunken-ruins.js",
+   "png": null,
+   "files": [
+    "sunken-ruins.js"
+   ]
+  },
+  {
+   "id": "sunset-lagoon",
+   "js": "sunset-lagoon.js",
+   "png": null,
+   "files": [
+    "sunset-lagoon.js"
+   ]
+  },
+  {
+   "id": "thunderstorm-ridge",
+   "js": "thunderstorm-ridge.js",
+   "png": null,
+   "files": [
+    "thunderstorm-ridge.js"
+   ]
+  },
+  {
+   "id": "tropical-islands",
+   "js": "tropical-islands.js",
+   "png": null,
+   "files": [
+    "tropical-islands.js"
+   ]
+  },
+  {
+   "id": "volcano",
+   "js": "volcano.js",
+   "png": null,
+   "files": [
+    "volcano.js"
+   ]
+  },
+  {
+   "id": "willow-marsh",
+   "js": "willow-marsh.js",
+   "png": null,
+   "files": [
+    "willow-marsh.js"
+   ]
+  }
+ ]
+}

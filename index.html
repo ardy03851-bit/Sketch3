@@ -230,7 +230,8 @@ select{font:700 15px var(--font);background:#f6f0e4;border:2px solid var(--ink);
 #fpsReadout{position:absolute;left:12px;bottom:10px;font:700 11px var(--font);color:var(--ink-soft);background:rgba(246,240,228,.8);padding:3px 7px;border-radius:5px}button:focus-visible,[role=button]:focus-visible{outline:3px solid var(--teal);outline-offset:4px}.screen .sub{line-height:1.5}
 @media(max-width:600px){.screen{padding:14px;align-items:flex-start}.screen>.card{margin:auto 0;max-height:calc(100dvh - 28px);padding:18px}.tagline{font-size:12px;text-align:center}#title .wrap{margin:auto 0;gap:14px}.menu-card{padding:18px}.menu-btns .btn{font-size:14px;padding:10px 8px}.sw.char{width:40px;height:40px}.swatches{gap:9px}.chips{gap:7px}.chip{font-size:11px;padding:7px 9px}.scores{gap:4px;padding-top:2px}.score{font-size:10px;padding:4px 6px;gap:3px}.score .blob{width:12px;height:12px}.codechip{display:none}.hud-btn{width:40px;height:40px}.round-chip{top:66px;font-size:10px}.wcard{bottom:12px;gap:7px;min-width:190px;padding:6px 10px}.wcard .wimg{width:45px}.wcard .wimg img{max-width:45px}.wcard .wn{font-size:13px}.wcard .hpbar{width:120px}#miniMap{width:120px;height:62px;right:8px;top:96px;bottom:auto}.wcard .pips small{display:none}.wcard .rarity-label{font-size:9px;margin-bottom:0}#statusText{min-height:0;font-size:9px}.net{font-size:9px;max-width:90px;text-align:right}.hint{bottom:calc(112px + var(--safe-b));max-width:92vw;white-space:normal;text-align:center;font-size:12px}.killfeed{top:100px}.gm-exp .killfeed{top:166px}.kf{font-size:11px}.banner .small{font-size:14px}.setting-row select{width:130px}.setup-grid{gap:8px}.tlabel{display:none}}
 @media(max-height:550px){#title .wrap{gap:9px}.logo{font-size:48px}.tagline{font-size:12px}.sw.char{width:34px;height:34px}.field{margin-bottom:8px}.menu-btns .btn{min-height:44px;font-size:14px}.screen{padding:12px}.screen>.card{max-height:calc(100dvh - 24px)}.menu-card{padding:12px 20px}.round-chip{top:55px}.reveal{top:60%}.reveal .rc{height:112px;width:190px}.reveal .rc img{max-height:45px}.wcard{bottom:8px}.banner{top:22%}}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-iteration-count:1!important;scroll-behavior:auto!important}}
+button,.btn,input,select,.screen{touch-action:manipulation}html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 </style>
 </head>
 <body>
@@ -539,47 +540,67 @@ async function githubList(sub) {
 }
 /* One request for the whole repository tree (instead of one per weapon folder), cached for
    10 minutes, so GitHub's 60 requests/hour limit for visitors is never a problem. */
+let ghTreeP = null;
 async function githubTree(sub) {
-  const g = githubTarget(); if (!g) return null; const key = 'ib_tree:' + g.full + '@' + (g.ref || '');
+  const g = githubTarget(); if (!g) return null;
+  if (!ghTreeP) ghTreeP = githubTreePaths(g); const paths = await ghTreeP;
+  if (!paths) return null; const pre = g.base + sub + '/'; const map = {};
+  for (const p of paths) { if (!p.startsWith(pre)) continue; const rest = p.slice(pre.length).split('/'); if (rest.length !== 2 || rest[0].startsWith('.')) continue; (map[rest[0]] = map[rest[0]] || []).push(rest[1]); }
+  return Object.keys(map).length ? map : null;
+}
+async function githubTreePaths(g) {
+  const key = 'ib_tree:' + g.full + '@' + (g.ref || '');
   let paths = null;
   try { const c = JSON.parse(sessionStorage.getItem(key) || 'null'); if (c && Date.now() - c.t < 600000) paths = c.p; } catch (e) { }
   if (!paths) for (const ref of g.ref ? [g.ref] : ['HEAD', 'main', 'gh-pages']) {
     try { const r = await fetch(`https://api.github.com/repos/${g.full}/git/trees/${ref}?recursive=1`); if (!r.ok) continue; const j = await r.json(); if (!Array.isArray(j.tree)) continue;
       paths = j.tree.filter(e => e.type === 'blob').map(e => e.path); try { sessionStorage.setItem(key, JSON.stringify({ t: Date.now(), p: paths })); } catch (e) { } break; } catch (e) { }
   }
-  if (!paths) return null; const pre = g.base + sub + '/'; const map = {};
-  for (const p of paths) { if (!p.startsWith(pre)) continue; const rest = p.slice(pre.length).split('/'); if (rest.length !== 2 || rest[0].startsWith('.')) continue; (map[rest[0]] = map[rest[0]] || []).push(rest[1]); }
-  return Object.keys(map).length ? map : null;
+  return paths;
 }
 async function fetchText(u) { try { const r = await fetch(u, { cache: 'no-store' }); if (!r.ok) return null; const t = await r.text(); if (/^\s*<!doctype html|^\s*<html/i.test(t)) return null; return t; } catch (e) { return null; } }
 
-async function discoverWeapons() {
-  Weapons.log = []; let dirs = null, how = '', manifest = null;
-  try { const r = await fetch('weapons/manifest.json'); if (r.ok) manifest = (await r.json()).weapons; } catch(e) {}
-  let L = await listDir('weapons/');
+/* Finds the sub-folders of a content folder (weapons, weapons2, biomes, biomes2) and the files in each.
+   Tries, in order: the web server's folder listing, the GitHub repository tree (one API call for
+   everything), GitHub's folder API, and finally the folder's manifest.json. */
+async function discoverFolder(root) {
+  let manifest = null;
+  try { const r = await fetch(root + '/manifest.json', { cache: 'no-store' }); if (r.ok) { const j = await r.json(); manifest = j.weapons || j.biomes || j.items || null; } } catch (e) { }
+  let dirs = null, how = '', tree = null, L = await listDir(root + '/');
   if (L && L.dirs.length) { dirs = L.dirs; how = 'folder listing'; }
-  let tree = null; if (!dirs) { tree = await githubTree('weapons'); if (tree) { dirs = Object.keys(tree); how = 'GitHub repository'; } }
-  if (!dirs) { L = await githubList('weapons'); if (L && L.dirs.length) { dirs = L.dirs; how = 'GitHub folders'; } }
+  if (!dirs) { tree = await githubTree(root); if (tree) { dirs = Object.keys(tree); how = 'GitHub repository'; } }
   if (!dirs && manifest?.length) { dirs = manifest.map(x => x.id); how = 'manifest'; }
-  const found = [];
-  if (dirs) {
-    await Promise.all(dirs.map(async name => {
-      let sub = how === 'folder listing' ? await listDir(`weapons/${encodeURIComponent(name)}/`) : how === 'GitHub repository' ? { files: tree[name] } : how === 'GitHub folders' ? await githubList(`weapons/${name}`) : null;
-      const entry = manifest?.find(x => x.id === name);
-      const files = sub ? sub.files : entry ? [entry.js, entry.png].filter(Boolean) : [];
-      const js = files.find(f => f.toLowerCase() === name.toLowerCase() + '.js') || files.find(f => /\.js$/i.test(f)) || name + '.js';
-      const png = files.find(f => f.toLowerCase() === name.toLowerCase() + '.png') || files.find(f => /\.png$/i.test(f)) || name + '.png';
-      const base = `weapons/${encodeURIComponent(name)}/`;
-      const src = await fetchText(base + encodeURIComponent(js));
-      let def = src ? parseWeaponScript(src, name) : null;
-      if (!src) Weapons.log.push(`${name}: no ${js} found — using default gun stats`);
-      const w = normalizeWeapon(def || { name, type: 'gun' }, name);
-      w.img = await loadImg(base + encodeURIComponent(png));
-      if (!w.img) Weapons.log.push(`${name}: no ${png} — using the no-texture square`);
-      w.path = base; found.push(w);
-    }));
-  }
-  setWeapons(found, dirs ? how : 'none found');
+  if (!dirs && !githubTarget()) return { dirs: [], how: 'none found', files: async () => [] };
+  if (!dirs) { L = await githubList(root); if (L && L.dirs.length) { dirs = L.dirs; how = 'GitHub folders'; } }
+  const files = async name => {
+    const sub = how === 'folder listing' ? await listDir(`${root}/${encodeURIComponent(name)}/`) : how === 'GitHub repository' ? { files: tree[name] } : how === 'GitHub folders' ? await githubList(`${root}/${name}`) : null;
+    const entry = manifest?.find(x => x.id === name);
+    return sub ? sub.files : entry ? (entry.files || [entry.js, entry.png].filter(Boolean)) : [];
+  };
+  return { dirs: dirs || [], how: dirs ? how : 'none found', files };
+}
+async function discoverWeaponFolder(root, set) {
+  const D = await discoverFolder(root); const found = [];
+  await Promise.all(D.dirs.map(async name => {
+    const files = await D.files(name);
+    const js = files.find(f => f.toLowerCase() === name.toLowerCase() + '.js') || files.find(f => /\.js$/i.test(f)) || name + '.js';
+    const png = files.find(f => f.toLowerCase() === name.toLowerCase() + '.png') || files.find(f => /\.png$/i.test(f)) || name + '.png';
+    const base = `${root}/${encodeURIComponent(name)}/`;
+    const [src, img] = await Promise.all([fetchText(base + encodeURIComponent(js)), loadImg(base + encodeURIComponent(png))]);
+    const def = src ? parseWeaponScript(src, name) : null;
+    if (!src) Weapons.log.push(`${root}/${name}: no ${js} found — using default gun stats`);
+    const w = normalizeWeapon(def || { name, type: 'gun' }, name);
+    w.img = img; if (!w.img) Weapons.log.push(`${root}/${name}: no ${png} — using the no-texture square`);
+    w.path = base; w.set = set; found.push(w);
+  }));
+  return { found, how: D.how };
+}
+async function discoverWeapons() {
+  Weapons.log = [];
+  const [A, B] = await Promise.all([discoverWeaponFolder('weapons', 'main'), discoverWeaponFolder('weapons2', 'event')]);
+  const ids = new Set(A.found.map(w => w.id));
+  for (const w of B.found) if (ids.has(w.id)) w.id = 'ev-' + w.id; // an event weapon may reuse a normal folder name
+  setWeapons([...A.found, ...B.found], A.found.length ? A.how : B.how);
 }
 async function weaponsFromFiles(fileList) {
   const groups = {};
@@ -1545,10 +1566,10 @@ function hostSwingStep(p) {
     for (const f of [.95, .75, .55]) { const px = p.x + Math.cos(cur) * reach * f, py = p.y + 2 + Math.sin(cur) * reach * f; if (solidAt(px, py)) { const d = w.destruction; sw.gashed = true; emit({ k: 'crater', x: Math.round(px), y: Math.round(py), r: d.crater, j: d.jagged ?? .6, s: randSeed(), sc: d.scorch || 0, dn: !!d.dent, deb: d.debris | 0, du: d.dust ?? .8, sp: 1 }); break; } }
   }
 }
-function setPhase(ph, left, extra = {}) { emit(Object.assign({ k: 'round', ph, left, bi: G.biome, mo: G.gameMode, seed: T.seed, n: G.round, sc: scoresList() }, extra)); }
+function setPhase(ph, left, extra = {}) { emit(Object.assign({ k: 'round', ph, left, bi: G.biome, bid: THEMES[G.biome]?.id, mo: G.gameMode, seed: T.seed, n: G.round, sc: scoresList() }, extra)); }
 function scoresList() { return [...G.players.values()].map(p => [p.id, p.score]); }
 function startRound() {
-  G.round++; G.biome = G.biomeChoice < 0 ? (Math.random()*THEMES.length|0) : G.biomeChoice; const seed = randSeed() & 0x7fffffff; emit({ k: 'round', ph: 'countdown', left: 2.6, bi: G.biome, mo: G.gameMode, seed, n: G.round, sc: scoresList() });
+  G.round++; G.biome = G.biomeChoice < 0 ? randomBiome() : G.biomeChoice; const seed = randSeed() & 0x7fffffff; emit({ k: 'round', ph: 'countdown', left: 2.6, bi: G.biome, bid: THEMES[G.biome]?.id, mo: G.gameMode, seed, n: G.round, sc: scoresList() });
   const ps = [...G.players.values()]; const spots = findSpawns(ps.length);
   ps.forEach((p, i) => hostSpawn(p, spots[i]));
 }
@@ -1637,7 +1658,24 @@ function loadScript(urls) { return new Promise(res => { let i = 0; const next = 
 const libPeer = () => window.Peer ? Promise.resolve(true) : loadScript(['https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js', 'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js']);
 const libMqtt = () => window.mqtt ? Promise.resolve(true) : loadScript(['https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js', 'https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js']);
 const Net = { peer: null, conns: new Map(), hostConn: null, lastRecv: 0, ping: 0, sendT: 0, snapT: 0, pingT: 0, imgParts: {}, reconnecting: false };
-function netSend(conn, m) { try { if (conn && conn.open) conn.send(m); } catch (e) { } }
+// PeerJS refuses JSON messages over ~16 KB (and then closes the connection), so big messages
+// (welcome, maps, huge snapshots) are split into ordered parts and put back together on arrival.
+const NET_ENC = new TextEncoder(); let netPartId = 1;
+function netSend(conn, m) {
+  try {
+    if (!conn || !conn.open) return;
+    const s = JSON.stringify(m);
+    if (s.length < 5000 || NET_ENC.encode(s).length < 15500) { conn.send(m); return; }
+    const k = netPartId++, N = 4000, n = Math.ceil(s.length / N);
+    for (let i = 0; i < n; i++) conn.send({ t: '_pt', k, i, n, d: s.slice(i * N, (i + 1) * N) });
+  } catch (e) { }
+}
+function netUnpart(conn, m) {
+  if (!m || m.t !== '_pt') return m;
+  const P = conn._parts || (conn._parts = {}); const b = P[m.k] || (P[m.k] = []);
+  b[m.i] = m.d; if (m.i < m.n - 1) return null;
+  delete P[m.k]; try { return JSON.parse(b.join('')); } catch (e) { return null; }
+}
 function netSendHost(m) { if (!G.isHost && Net.hostConn) netSend(Net.hostConn, m); }
 function broadcast(m) { for (const c of Net.conns.values()) netSend(c.conn, m); }
 function rosterMsg() { return { t: 'roster', l: [...G.players.values()].map(p => [p.id, p.name, p.color, p.isBot ? 1 : 0, p.score, p.kills, p.char || '']) }; }
@@ -1656,7 +1694,7 @@ function openHostPeer() {
 }
 function hostWire(peer) {
   peer.on('connection', conn => {
-    conn.on('data', m => hostRecv(conn, m)); conn.on('close', () => hostDrop(conn)); conn.on('error', () => hostDrop(conn));
+    conn.on('data', m => { m = netUnpart(conn, m); if (m) hostRecv(conn, m); }); conn.on('close', () => hostDrop(conn)); conn.on('error', () => hostDrop(conn));
   });
   peer.on('disconnected', () => { if (Net.peer !== peer || peer.destroyed) return; Net.reconnecting = true; setTimeout(() => { try { if (!peer.destroyed) peer.reconnect(); } catch (e) { } }, 1500); });
   peer.on('open', () => { Net.reconnecting = false; });
@@ -1673,8 +1711,8 @@ function hostRecv(conn, m) {
       let color = ch ? ch.color : (PLAYER_COLORS.includes(m.color) && !used.has(m.color) ? m.color : (PLAYER_COLORS.find(x => !used.has(x)) || PLAYER_COLORS[0]));
       const pid = 'p' + (++G.pidCounter); const np = makePlayer(pid, cleanName(m.name), color, false, ch ? ch.id : null); np.conn = conn; Net.conns.set(conn.peer, { conn, pid }); G.players.set(pid, np);
       const bots = [...G.players.values()].filter(q => q.isBot); for (const b of bots) b.color === color && (b.color = PLAYER_COLORS.find(x => ![...G.players.values()].some(q => q.color === x)) || b.color);
-      netSend(conn, { t: 'welcome', id: pid, room: { code: G.code, name: G.roomName, max: G.maxPlayers, target: G.target }, ph: G.phase, left: Math.max(0, G.phaseEnd - now()), n: G.round, seed: T.seed, craters: T.craters, bi: G.biome, mo: G.gameMode, crates: Env.crates, props: propsNetState(), ext: NetExt.pack(), weapons: Weapons.list.map(netSafe) });
-      sendWeaponImages(conn);
+      netSend(conn, { t: 'welcome', id: pid, room: { code: G.code, name: G.roomName, max: G.maxPlayers, target: G.target }, ph: G.phase, left: Math.max(0, G.phaseEnd - now()), n: G.round, seed: T.seed, craters: T.craters, bi: G.biome, bid: THEMES[G.biome]?.id, mo: G.gameMode, crates: Env.crates, props: propsNetState(), ext: NetExt.pack(), weapons: Weapons.list.map(netSafe) });
+      sendWeaponImages(conn, new Set(Array.isArray(m.have) ? m.have.slice(0, 400) : []));
       syncBots(); broadcastRoster(); emit({ k: 'join', id: pid, name: np.name });
       if (G.phase !== 'over' && G.phase !== 'champion') hostSpawn(np); else np.respawnAt = 0;
       Lobby.publish(); UI.rosterChanged(); break;
@@ -1686,8 +1724,8 @@ function hostRecv(conn, m) {
     case 'bye': hostDrop(conn); break;
   }
 }
-function sendWeaponImages(conn) {
-  for (const w of Weapons.list) { const data = weaponImageData(w); if (!data) continue; const size = 14000, n = Math.ceil(data.length / size); for (let i = 0; i < n; i++) netSend(conn, { t: 'wimg', id: w.id, i, n, d: data.slice(i * size, (i + 1) * size) }); }
+function sendWeaponImages(conn, have) {
+  for (const w of Weapons.list) { if (have && have.has(w.id + '|' + w.path)) continue; /* the player already has this picture from the same site */ const data = weaponImageData(w); if (!data) continue; const size = 14000, n = Math.ceil(data.length / size); for (let i = 0; i < n; i++) netSend(conn, { t: 'wimg', id: w.id, i, n, d: data.slice(i * size, (i + 1) * size) }); }
 }
 function hostDrop(conn) {
   const c = Net.conns.get(conn.peer); if (!c) return; Net.conns.delete(conn.peer); const p = G.players.get(c.pid);
@@ -1704,8 +1742,8 @@ function startClient(code) {
     const to = setTimeout(() => { if (!joined && Net.token === token) fail('The room did not answer. It may have closed, or the network is blocking peer-to-peer.'); }, 16000);
     peer.on('open', () => {
       const conn = peer.connect(PEER_PREFIX + code, { reliable: true, serialization: 'json' }); Net.hostConn = conn;
-      conn.on('open', () => { netSend(conn, { t: 'hello', name: UI.name, color: UI.color, char: UI.char, v: 1 }); });
-      conn.on('data', m => { if (m && m.t === 'welcome') { joined = true; clearTimeout(to); } clientRecv(m); });
+      conn.on('open', () => { netSend(conn, { t: 'hello', name: UI.name, color: UI.color, char: UI.char, v: 1, have: Weapons.list.filter(w => w.img && w.path && !/^picked/.test(w.path)).map(w => w.id + '|' + w.path) }); });
+      conn.on('data', m => { m = netUnpart(conn, m); if (!m) return; if (m.t === 'welcome') { joined = true; clearTimeout(to); } clientRecv(m); });
       conn.on('close', () => { if (Net.token === token) { if (joined) lostConnection('The host closed the room.'); else fail('Connection closed by the host.'); } });
       conn.on('error', () => { });
     });
@@ -1718,9 +1756,9 @@ function clientRecv(m) {
   switch (m.t) {
     case 'welcome': {
       Weapons.backup = Weapons.backup || { list: Weapons.list, byId: Weapons.byId, source: Weapons.source };
-      const list = (m.weapons || []).map(d => { const w = normalizeWeapon(d, d.id); w.img = null; w._tag = null; return w; }); Weapons.list = list; Weapons.byId = { _fists: FISTS }; for (const w of list) Weapons.byId[w.id] = w; Weapons.source = 'from host';
+      const mine = Weapons.backup.byId || {}; const list = (m.weapons || []).map(d => { const w = normalizeWeapon(d, d.id); const L = mine[d.id]; w.img = L && L.img && L.path === d.path ? L.img : null; w._tag = null; return w; }); Weapons.list = list; Weapons.byId = { _fists: FISTS }; for (const w of list) Weapons.byId[w.id] = w; Weapons.source = 'from host';
       G.isHost = false; G.offline = false; G.demo = false; G.myId = m.id; G.code = m.room.code; G.roomName = m.room.name; G.maxPlayers = m.room.max; G.target = m.room.target;
-      G.players.clear(); G.bullets = []; FX.parts = []; G.gameMode = m.mo || 'arena'; G.biome = m.bi ?? 0; NetExt.pre(m.ext); generateMap(m.seed); Env.crates = m.crates || []; for (const c of m.craters || []) carveCrater(c); T.craters = (m.craters || []).slice(); applyPropsNetState(m.props); propsSupportPass(); NetExt.post(m.ext); rebuildTerrain(null); T.dirty = null;
+      G.players.clear(); G.bullets = []; FX.parts = []; G.gameMode = m.mo || 'arena'; G.biome = biomeFromNet(m.bid, m.bi ?? 0); NetExt.pre(m.ext); generateMap(m.seed); Env.crates = m.crates || []; for (const c of m.craters || []) carveCrater(c); T.craters = (m.craters || []).slice(); applyPropsNetState(m.props); propsSupportPass(); NetExt.post(m.ext); rebuildTerrain(null); T.dirty = null;
       G.phase = m.ph; G.phaseEnd = now() + (m.left || 0); G.round = m.n; enterPlay(); break;
     }
     case 'wimg': { const k = m.id; const st = Net.imgParts[k] || (Net.imgParts[k] = []); st[m.i] = m.d; if (st.filter(Boolean).length === m.n) { const data = st.join(''); delete Net.imgParts[k]; loadImg(data).then(img => { const w = Weapons.byId[k]; if (w && img) { w.img = img; w._tag = null; UI.weaponsChanged(); UI.hudWeapon(true); } }); } break; }
@@ -1814,7 +1852,7 @@ function applyEvent(e) {
     }
     case 'arm': if (!p) break; p.wid = e.wid; p.ammo = e.ammo; if (p.id === G.myId) { UI.hudWeapon(true); UI.hint('Weapon changed', 1.6); } break;
     case 'round': {
-      G.gameMode = e.mo || G.gameMode || 'arena'; G.biome = e.bi ?? G.biome ?? 0;
+      G.gameMode = e.mo || G.gameMode || 'arena'; G.biome = biomeFromNet(e.bid, e.bi ?? G.biome ?? 0);
       if (e.seed !== T.seed) { generateMap(e.seed); G.bullets = []; FX.parts = FX.parts.filter(q => q.k === 'num'); }
       G.phase = e.ph; G.phaseEnd = now() + (e.left || 0); G.round = e.n; if (e.sc) for (const [id, s] of e.sc) { const q = G.players.get(id); if (q) q.score = s; }
       if (e.ph === 'countdown') for (const q of G.players.values()) q.alive = false;
@@ -1836,7 +1874,7 @@ function startMenu() {
 }
 async function startHost(opts) {
   stopSession(); resetWorld();
-  G.isHost = true; G.offline = !!opts.offline; G.demo = false; G.roomName = opts.name; G.maxPlayers = opts.max; G.target = opts.target; G.gameMode = opts.gameMode || 'arena'; G.biomeChoice = opts.biome ?? -1; G.biome = G.biomeChoice < 0 ? (Math.random()*THEMES.length|0) : G.biomeChoice; G.botsWanted = opts.bots; G.public = opts.public !== false;
+  G.isHost = true; G.offline = !!opts.offline; G.demo = false; G.roomName = opts.name; G.maxPlayers = opts.max; G.target = opts.target; G.gameMode = opts.gameMode || 'arena'; G.biomeChoice = opts.biome ?? -1; G.biome = G.biomeChoice < 0 ? randomBiome() : G.biomeChoice; G.botsWanted = opts.bots; G.public = opts.public !== false;
   if (!G.offline) {
     UI.show('connecting'); $('#connTitle').textContent = 'Opening your room'; $('#connSub').textContent = 'Registering with the matchmaking server…'; $('#connErr').textContent = '';
     try { const { peer, code } = await openHostPeer(); Net.peer = peer; G.code = code; hostWire(peer); }
@@ -2057,6 +2095,8 @@ window.render_game_to_text = () => JSON.stringify({
 <script src="world.js"></script>
 <script src="build.js"></script>
 <script src="modes.js"></script>
+<script src="content.js"></script>
+<script src="menu.js"></script>
 <script>
 /* ---------- boot ---------- */
 (async function boot() {
@@ -2065,11 +2105,12 @@ window.render_game_to_text = () => JSON.stringify({
   UI.init(); initExpansionUI(); startMenu(); requestAnimationFrame(frame);
   const wp = discoverWeapons();
   const cp = discoverChars();
+  const bp = discoverBiomes().catch(e => console.warn('biomes', e)); loadEventInfo().then(() => MainMenu.eventReady());
   Lobby.ensure(); libPeer();
   try { await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 2500))]); } catch (e) { }
-  await Promise.race([Promise.all([wp, cp]), new Promise(r => setTimeout(r, 4500))]);
+  await Promise.race([Promise.all([wp, cp, bp]), new Promise(r => setTimeout(r, 4500))]);
   const L = $('#loading'); L.style.opacity = 0; setTimeout(() => L.remove(), 600);
-  const join = new URLSearchParams(location.search).get('join'); if (join) { await Promise.all([wp, cp]); startClient(join); }
+  const join = new URLSearchParams(location.search).get('join'); if (join) { await Promise.all([wp, cp, bp]); startClient(join); }
 })();
 </script>
 </body>
