@@ -1,0 +1,264 @@
+{
+ "weapons": [
+  {
+   "id": "acid",
+   "js": "acid.js",
+   "png": "acid.png"
+  },
+  {
+   "id": "axe",
+   "js": "axe.js",
+   "png": "axe.png"
+  },
+  {
+   "id": "bat",
+   "js": "bat.js",
+   "png": "bat.png"
+  },
+  {
+   "id": "blunderbuss",
+   "js": "blunderbuss.js",
+   "png": "blunderbuss.png"
+  },
+  {
+   "id": "boomerang",
+   "js": "boomerang.js",
+   "png": "boomerang.png"
+  },
+  {
+   "id": "bubble",
+   "js": "bubble.js",
+   "png": "bubble.png"
+  },
+  {
+   "id": "burstrifle",
+   "js": "burstrifle.js",
+   "png": "burstrifle.png"
+  },
+  {
+   "id": "confetti",
+   "js": "confetti.js",
+   "png": "confetti.png"
+  },
+  {
+   "id": "crossbow",
+   "js": "crossbow.js",
+   "png": "crossbow.png"
+  },
+  {
+   "id": "cryo",
+   "js": "cryo.js",
+   "png": "cryo.png"
+  },
+  {
+   "id": "daggers",
+   "js": "daggers.js",
+   "png": "daggers.png"
+  },
+  {
+   "id": "derringer",
+   "js": "derringer.js",
+   "png": "derringer.png"
+  },
+  {
+   "id": "dollar",
+   "js": "script.js",
+   "png": "dollar.png"
+  },
+  {
+   "id": "firework",
+   "js": "firework.js",
+   "png": "firework.png"
+  },
+  {
+   "id": "flamer",
+   "js": "flamer.js",
+   "png": "flamer.png"
+  },
+  {
+   "id": "grenade",
+   "js": "grenade.js",
+   "png": "grenade.png"
+  },
+  {
+   "id": "gun",
+   "js": "gun.js",
+   "png": "gun.png"
+  },
+  {
+   "id": "hammer",
+   "js": "hammer.js",
+   "png": "hammer.png"
+  },
+  {
+   "id": "handcannon",
+   "js": "handcannon.js",
+   "png": "handcannon.png"
+  },
+  {
+   "id": "harpoon",
+   "js": "harpoon.js",
+   "png": "harpoon.png"
+  },
+  {
+   "id": "hornet",
+   "js": "hornet.js",
+   "png": "hornet.png"
+  },
+  {
+   "id": "inkblot",
+   "js": "inkblot.js",
+   "png": "inkblot.png"
+  },
+  {
+   "id": "inksaber",
+   "js": "inksaber.js",
+   "png": "inksaber.png"
+  },
+  {
+   "id": "katana",
+   "js": "script.js",
+   "png": "IMG_2301.png"
+  },
+  {
+   "id": "longbow",
+   "js": "longbow.js",
+   "png": "longbow.png"
+  },
+  {
+   "id": "mace",
+   "js": "mace.js",
+   "png": "mace.png"
+  },
+  {
+   "id": "minigun",
+   "js": "minigun.js",
+   "png": "minigun.png"
+  },
+  {
+   "id": "mortar",
+   "js": "mortar.js",
+   "png": "mortar.png"
+  },
+  {
+   "id": "nailgun",
+   "js": "nailgun.js",
+   "png": "nailgun.png"
+  },
+  {
+   "id": "pan",
+   "js": "pan.js",
+   "png": "pan.png"
+  },
+  {
+   "id": "pickaxe",
+   "js": "pickaxe.js",
+   "png": "pickaxe.png"
+  },
+  {
+   "id": "plasma",
+   "js": "plasma.js",
+   "png": "plasma.png"
+  },
+  {
+   "id": "railgun",
+   "js": "railgun.js",
+   "png": "railgun.png"
+  },
+  {
+   "id": "raypistol",
+   "js": "raypistol.js",
+   "png": "raypistol.png"
+  },
+  {
+   "id": "ricochet",
+   "js": "ricochet.js",
+   "png": "ricochet.png"
+  },
+  {
+   "id": "rifle",
+   "js": "script.js",
+   "png": "IMG_2305.png"
+  },
+  {
+   "id": "rocket",
+   "js": "rocket.js",
+   "png": "rocket.png"
+  },
+  {
+   "id": "sawlauncher",
+   "js": "sawlauncher.js",
+   "png": "sawlauncher.png"
+  },
+  {
+   "id": "scythe",
+   "js": "scythe.js",
+   "png": "scythe.png"
+  },
+  {
+   "id": "shotgun",
+   "js": "shotgun.js",
+   "png": "shotgun.png"
+  },
+  {
+   "id": "smg",
+   "js": "smg.js",
+   "png": "smg.png"
+  },
+  {
+   "id": "sniper",
+   "js": "sniper.js",
+   "png": "sniper.png"
+  },
+  {
+   "id": "snowball",
+   "js": "snowball.js",
+   "png": "snowball.png"
+  },
+  {
+   "id": "spear",
+   "js": "spear.js",
+   "png": "spear.png"
+  },
+  {
+   "id": "stickymine",
+   "js": "stickymine.js",
+   "png": "stickymine.png"
+  },
+  {
+   "id": "supasword",
+   "js": "script.js",
+   "png": "IMG_2303.png"
+  },
+  {
+   "id": "supergun",
+   "js": "script.js",
+   "png": "IMG_2298.png"
+  },
+  {
+   "id": "superstick",
+   "js": "script.js",
+   "png": "IMG_2296.png"
+  },
+  {
+   "id": "sword",
+   "js": "sword.js",
+   "png": "sword.png"
+  },
+  {
+   "id": "tesla",
+   "js": "tesla.js",
+   "png": "tesla.png"
+  },
+  {
+   "id": "toolbox",
+   "js": "toolbox.js",
+   "png": "toolbox.png"
+  },
+  {
+   "id": "voidgun",
+   "js": "voidgun.js",
+   "png": "voidgun.png"
+  }
+ ]
+}

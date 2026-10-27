@@ -537,6 +537,20 @@ async function githubList(sub) {
   }
   return null;
 }
+/* One request for the whole repository tree (instead of one per weapon folder), cached for
+   10 minutes, so GitHub's 60 requests/hour limit for visitors is never a problem. */
+async function githubTree(sub) {
+  const g = githubTarget(); if (!g) return null; const key = 'ib_tree:' + g.full + '@' + (g.ref || '');
+  let paths = null;
+  try { const c = JSON.parse(sessionStorage.getItem(key) || 'null'); if (c && Date.now() - c.t < 600000) paths = c.p; } catch (e) { }
+  if (!paths) for (const ref of g.ref ? [g.ref] : ['HEAD', 'main', 'gh-pages']) {
+    try { const r = await fetch(`https://api.github.com/repos/${g.full}/git/trees/${ref}?recursive=1`); if (!r.ok) continue; const j = await r.json(); if (!Array.isArray(j.tree)) continue;
+      paths = j.tree.filter(e => e.type === 'blob').map(e => e.path); try { sessionStorage.setItem(key, JSON.stringify({ t: Date.now(), p: paths })); } catch (e) { } break; } catch (e) { }
+  }
+  if (!paths) return null; const pre = g.base + sub + '/'; const map = {};
+  for (const p of paths) { if (!p.startsWith(pre)) continue; const rest = p.slice(pre.length).split('/'); if (rest.length !== 2 || rest[0].startsWith('.')) continue; (map[rest[0]] = map[rest[0]] || []).push(rest[1]); }
+  return Object.keys(map).length ? map : null;
+}
 async function fetchText(u) { try { const r = await fetch(u, { cache: 'no-store' }); if (!r.ok) return null; const t = await r.text(); if (/^\s*<!doctype html|^\s*<html/i.test(t)) return null; return t; } catch (e) { return null; } }
 
 async function discoverWeapons() {
@@ -544,12 +558,13 @@ async function discoverWeapons() {
   try { const r = await fetch('weapons/manifest.json'); if (r.ok) manifest = (await r.json()).weapons; } catch(e) {}
   let L = await listDir('weapons/');
   if (L && L.dirs.length) { dirs = L.dirs; how = 'folder listing'; }
-  if (!dirs) { L = await githubList('weapons'); if (L && L.dirs.length) { dirs = L.dirs; how = 'GitHub repository'; } }
+  let tree = null; if (!dirs) { tree = await githubTree('weapons'); if (tree) { dirs = Object.keys(tree); how = 'GitHub repository'; } }
+  if (!dirs) { L = await githubList('weapons'); if (L && L.dirs.length) { dirs = L.dirs; how = 'GitHub folders'; } }
   if (!dirs && manifest?.length) { dirs = manifest.map(x => x.id); how = 'manifest'; }
   const found = [];
   if (dirs) {
     await Promise.all(dirs.map(async name => {
-      let sub = how === 'folder listing' ? await listDir(`weapons/${encodeURIComponent(name)}/`) : how === 'GitHub repository' ? await githubList(`weapons/${name}`) : null;
+      let sub = how === 'folder listing' ? await listDir(`weapons/${encodeURIComponent(name)}/`) : how === 'GitHub repository' ? { files: tree[name] } : how === 'GitHub folders' ? await githubList(`weapons/${name}`) : null;
       const entry = manifest?.find(x => x.id === name);
       const files = sub ? sub.files : entry ? [entry.js, entry.png].filter(Boolean) : [];
       const js = files.find(f => f.toLowerCase() === name.toLowerCase() + '.js') || files.find(f => /\.js$/i.test(f)) || name + '.js';
@@ -948,10 +963,11 @@ function findSpawns(n, R = Math.random) {
 }
 
 /* ---------- 5. players & physics ---------- */
+function maxHp() { return (typeof G !== 'undefined' && G.opts && G.opts.hp) || 100; }
 const G = { mode: 'menu', isHost: false, offline: true, demo: false, players: new Map(), myId: null, bullets: [], phase: 'warmup', phaseEnd: 0, round: 0, target: 5, maxPlayers: 6,
   roomName: '', code: '', public: true, botsWanted: 0, outbox: [], seq: 1, time: 0, lastSnap: 0, winner: null, champion: null, hitStop: 0, trauma: 0, flash: 0, pidCounter: 1 };
 function makePlayer(id, name, color, isBot = false, char = null) {
-  return { id, name, color, char, isBot, x: W / 2, y: 100, vx: 0, vy: 0, face: 1, aim: 0, hp: 100, alive: false, grounded: false, coyote: 0, jumpBuf: 0, jumps: 1, wid: '_fists', ammo: 0, nextAtk: 0, uses: 0,
+  return { id, name, color, char, isBot, x: W / 2, y: 100, vx: 0, vy: 0, face: 1, aim: 0, hp: maxHp(), alive: false, grounded: false, coyote: 0, jumpBuf: 0, jumps: 1, wid: '_fists', ammo: 0, nextAtk: 0, uses: 0,
     score: 0, kills: 0, sq: 1, sqv: 0, runT: 0, kick: 0, hurt: 0, spawnT: 0, lungeT: 0, swing: null, tx: 0, ty: 0, tvx: 0, tvy: 0, tsnap: 0, lastHitBy: null, lastHitT: 0, respawnAt: 0,
     input: { mx: 0, jump: false, jumpHeld: false, down: false }, seed: (Math.random() * 1000) | 0, ai: null, conn: null, lastSeen: now(), wasGround: true };
 }
@@ -1354,8 +1370,8 @@ function render(t) {
   drawAdditive(c);
   // name tags
   c.textAlign = 'center'; c.font = '700 15px "Shantell Sans", sans-serif';
-  for (const p of ps) { if (!p.alive) continue; const y = p.y - HH - 20; const tag = p.name; c.lineWidth = 4; c.strokeStyle = 'rgba(236,227,209,.9)'; c.strokeText(tag, p.x, y); c.fillStyle = p.id === G.myId ? INK : 'rgba(31,28,36,.85)'; c.fillText(tag, p.x, y);
-    const bw = 38; c.fillStyle = 'rgba(31,28,36,.25)'; c.fillRect(p.x - bw / 2, y + 5, bw, 4.5); c.fillStyle = p.hp > 35 ? p.color : '#d9573b'; c.fillRect(p.x - bw / 2, y + 5, bw * clamp(p.hp / 100, 0, 1), 4.5); c.strokeStyle = INK; c.lineWidth = 1.2; c.strokeRect(p.x - bw / 2, y + 5, bw, 4.5); }
+  for (const p of ps) { if (!p.alive || !visibleWorld(p.x, p.y, 90)) continue; const y = p.y - HH - 20; const tag = p.name; c.lineWidth = 4; c.strokeStyle = 'rgba(236,227,209,.9)'; c.strokeText(tag, p.x, y); c.fillStyle = p.team && typeof teamColor === 'function' ? shadeC(teamColor(p.team), -.25) : p.id === G.myId ? INK : 'rgba(31,28,36,.85)'; c.fillText(tag, p.x, y);
+    const bw = 38; c.fillStyle = 'rgba(31,28,36,.25)'; c.fillRect(p.x - bw / 2, y + 5, bw, 4.5); c.fillStyle = p.hp > maxHp() * .35 ? p.color : '#d9573b'; c.fillRect(p.x - bw / 2, y + 5, bw * clamp(p.hp / maxHp(), 0, 1), 4.5); c.strokeStyle = INK; c.lineWidth = 1.2; c.strokeRect(p.x - bw / 2, y + 5, bw, 4.5); }
   c.restore();
   // post: sun glow + vignette (pre-rendered into a single bitmap), then paper grain
   const okey = T.seed + '|' + R8.cw + '|' + R8.ch + '|' + R8.dpr;
@@ -1546,12 +1562,13 @@ function hostRules() {
   if (G.phase === 'warmup') {
     for (const p of all) if (!p.alive && t > p.respawnAt) hostSpawn(p);
     if (all.length >= 2) startRound();
-  } else if (G.phase === 'countdown') { if (t >= G.phaseEnd) { G.sd = false; G.sdTick = 0; setPhase('fight', G.gameMode === 'expedition' ? 150 : ROUND_TIME); } }
+  } else if (G.phase === 'countdown') { if (t >= G.phaseEnd) { G.sd = false; G.sdTick = 0; G.roundLen = typeof roundTimeFor === 'function' ? roundTimeFor() : (G.gameMode === 'expedition' ? 150 : ROUND_TIME); setPhase('fight', G.roundLen); } }
   else if (G.phase === 'fight') {
     if (all.length < 2) { setPhase('warmup', 0); return; }
     const alive = all.filter(p => p.alive);
+    if (typeof fightRules === 'function' && fightRules(all, alive, t)) return;
     if (!G.sd && t >= G.phaseEnd && G.phaseEnd > 0) { G.sd = true; G.sdTick = t + 1; emit({ k: 'sd' }); }
-    if (G.sd && t >= G.sdTick) { G.sdTick = t + .5; for (const p of alive) hostDamage(p, 4, p.lastHitT && t - p.lastHitT < 5 ? p.lastHitBy : null, '_sd', 0, 0, p.x, p.y - 20); }
+    if (G.sd && t >= G.sdTick) { G.sdTick = t + .5; for (const p of alive) hostDamage(p, Math.ceil(4 * maxHp() / 100), p.lastHitT && t - p.lastHitT < 5 ? p.lastHitBy : null, '_sd', 0, 0, p.x, p.y - 20); }
     if (alive.length <= 1) { const win = alive[0] || null; if (win) win.score++; const champ = win && win.score >= G.target; setPhase(champ ? 'champion' : 'over', champ ? 5.5 : 2.8, { win: win ? win.id : null }); }
   } else if (G.phase === 'over' || G.phase === 'champion') {
     if (t >= G.phaseEnd) { if (G.phase === 'champion') { for (const p of all) { p.score = 0; p.kills = 0; } broadcastRoster(); } if (all.length >= 2) startRound(); else { setPhase('warmup', 0); for (const p of all) if (!p.alive) p.respawnAt = 0; } }
@@ -1561,7 +1578,7 @@ const ROUND_TIME = 60;
 const BOT_NAMES = ['Smudge', 'Blot', 'Doodle', 'Graphite', 'Nib', 'Quill', 'Scrawl', 'Sketch', 'Charcoal', 'Inky'];
 function syncBots() {
   if (!G.isHost) return; const humans = [...G.players.values()].filter(p => !p.isBot).length; const bots = [...G.players.values()].filter(p => p.isBot);
-  const want = clamp(G.botsWanted, 0, Math.max(0, G.maxPlayers - humans));
+  const want = clamp(G.botsWanted, 0, G.botCap != null ? Math.max(0, G.botCap - humans) : Math.max(0, G.maxPlayers - humans));
   while (bots.length > want) { const b = bots.pop(); G.players.delete(b.id); }
   while (bots.length < want) {
     const used = new Set([...G.players.values()].map(p => p.color));
@@ -1569,7 +1586,8 @@ function syncBots() {
     const pick = Chars.list.length ? (pool.length ? pool : Chars.list)[(Math.random() * (pool.length ? pool.length : Chars.list.length)) | 0] : null;
     const color = pick ? pick.color : (PLAYER_COLORS.find(c => !used.has(c)) || PLAYER_COLORS[bots.length % 8]);
     const names = BOT_NAMES.filter(n => ![...G.players.values()].some(p => p.name === n));
-    const b = makePlayer('b' + (++G.pidCounter), names[(Math.random() * names.length) | 0] || 'Bot', color, true, pick ? pick.id : null);
+    const plain = names.filter(n => !n.includes(' ')); const namePool = plain.length ? plain : names;
+    const b = makePlayer('b' + (++G.pidCounter), namePool[(Math.random() * namePool.length) | 0] || 'Bot ' + G.pidCounter, color, true, pick ? pick.id : null);
     G.players.set(b.id, b); bots.push(b);
     if (G.phase === 'warmup' || G.phase === 'fight' || G.phase === 'countdown') hostSpawn(b);
   }
@@ -1655,7 +1673,7 @@ function hostRecv(conn, m) {
       let color = ch ? ch.color : (PLAYER_COLORS.includes(m.color) && !used.has(m.color) ? m.color : (PLAYER_COLORS.find(x => !used.has(x)) || PLAYER_COLORS[0]));
       const pid = 'p' + (++G.pidCounter); const np = makePlayer(pid, cleanName(m.name), color, false, ch ? ch.id : null); np.conn = conn; Net.conns.set(conn.peer, { conn, pid }); G.players.set(pid, np);
       const bots = [...G.players.values()].filter(q => q.isBot); for (const b of bots) b.color === color && (b.color = PLAYER_COLORS.find(x => ![...G.players.values()].some(q => q.color === x)) || b.color);
-      netSend(conn, { t: 'welcome', id: pid, room: { code: G.code, name: G.roomName, max: G.maxPlayers, target: G.target }, ph: G.phase, left: Math.max(0, G.phaseEnd - now()), n: G.round, seed: T.seed, craters: T.craters, bi: G.biome, mo: G.gameMode, crates: Env.crates, props: Env.props.map(p=>({id:p.id,fall:p.fall,burn:p.burn,dead:p.dead})), weapons: Weapons.list.map(netSafe) });
+      netSend(conn, { t: 'welcome', id: pid, room: { code: G.code, name: G.roomName, max: G.maxPlayers, target: G.target }, ph: G.phase, left: Math.max(0, G.phaseEnd - now()), n: G.round, seed: T.seed, craters: T.craters, bi: G.biome, mo: G.gameMode, crates: Env.crates, props: propsNetState(), ext: NetExt.pack(), weapons: Weapons.list.map(netSafe) });
       sendWeaponImages(conn);
       syncBots(); broadcastRoster(); emit({ k: 'join', id: pid, name: np.name });
       if (G.phase !== 'over' && G.phase !== 'champion') hostSpawn(np); else np.respawnAt = 0;
@@ -1702,7 +1720,7 @@ function clientRecv(m) {
       Weapons.backup = Weapons.backup || { list: Weapons.list, byId: Weapons.byId, source: Weapons.source };
       const list = (m.weapons || []).map(d => { const w = normalizeWeapon(d, d.id); w.img = null; w._tag = null; return w; }); Weapons.list = list; Weapons.byId = { _fists: FISTS }; for (const w of list) Weapons.byId[w.id] = w; Weapons.source = 'from host';
       G.isHost = false; G.offline = false; G.demo = false; G.myId = m.id; G.code = m.room.code; G.roomName = m.room.name; G.maxPlayers = m.room.max; G.target = m.room.target;
-      G.players.clear(); G.bullets = []; FX.parts = []; G.gameMode = m.mo || 'arena'; G.biome = m.bi ?? 0; generateMap(m.seed); Env.crates = m.crates || []; for(const v of m.props||[]) { const q=Env.props.find(p=>p.id===v.id); if(q) Object.assign(q,v); } for (const c of m.craters || []) carveCrater(c); T.craters = (m.craters || []).slice(); rebuildTerrain(null); T.dirty = null;
+      G.players.clear(); G.bullets = []; FX.parts = []; G.gameMode = m.mo || 'arena'; G.biome = m.bi ?? 0; NetExt.pre(m.ext); generateMap(m.seed); Env.crates = m.crates || []; for (const c of m.craters || []) carveCrater(c); T.craters = (m.craters || []).slice(); applyPropsNetState(m.props); propsSupportPass(); NetExt.post(m.ext); rebuildTerrain(null); T.dirty = null;
       G.phase = m.ph; G.phaseEnd = now() + (m.left || 0); G.round = m.n; enterPlay(); break;
     }
     case 'wimg': { const k = m.id; const st = Net.imgParts[k] || (Net.imgParts[k] = []); st[m.i] = m.d; if (st.filter(Boolean).length === m.n) { const data = st.join(''); delete Net.imgParts[k]; loadImg(data).then(img => { const w = Weapons.byId[k]; if (w && img) { w.img = img; w._tag = null; UI.weaponsChanged(); UI.hudWeapon(true); } }); } break; }
@@ -1775,7 +1793,7 @@ function applyEvent(e) {
     case 'shot': if (!p) break; if (e.id === G.myId && !G.isHost) break; spawnBullets(e, G.isHost); shotFx(p, e); break;
     case 'swing': if (!p) break; if (e.id === G.myId && !G.isHost) break; startSwing(p, e.a); break;
     case 'deflect': FX.sparks(e.x, e.y, e.a, 14, '#fff4d8'); FX.ring(e.x, e.y, 30, 'rgba(255,250,236,.95)', 3); FX.light(e.x, e.y, 160, '#fff1d0', .15, 1); Audio2.play('clang', e.x); if (!G.isHost) G.bullets.push({ x: e.x, y: e.y, vx: Math.cos(e.a) * 2200, vy: Math.sin(e.a) * 2200, owner: e.id, wid: e.wid, dist: 0, bounces: 0, auth: false, trail: [[e.x, e.y]], dead: false, born: now(), deflected: true, grace: 0 }); break;
-    case 'crater': applyCrater(e); T.craters.push(e); if (T.craters.length > 420) T.craters.shift(); if (e.sp) FX.sparks(e.x, e.y, -Math.PI / 2, 8, '#fff1d0'); break;
+    case 'crater': applyCrater(e); T.craters.push(e); if (T.craters.length > (W > 2000 ? 2400 : 700)) T.craters.shift(); if (e.sp) FX.sparks(e.x, e.y, -Math.PI / 2, 8, '#fff1d0'); break;
     case 'hit': {
       if (!p) break; p.hp = e.hp; p.hurt = 1; p.evT = now(); const big = e.d >= 30; const dir = Math.atan2(e.ky, e.kx);
       if (e.d > 0) { FX.ink(e.x, e.y, Math.min(14, Math.round(4 + e.d / 8)), p.color, big ? 1.05 : .72, dir); FX.ring(e.x, e.y, big ? 40 : 26, 'rgba(255,250,240,.92)', big ? 3 : 2, .18); FX.sparks(e.x, e.y, dir, big ? 5 : 3, '#fff6e2'); FX.add({ k: 'num', x: e.x, y: e.y - 18, vy: -120, t: 0, life: .8, txt: (e.h ? 'HEAD ' : '') + e.d, col: p.color }); Audio2.play('hit', e.x, big ? 1 : .7); }
@@ -1790,7 +1808,7 @@ function applyEvent(e) {
       UI.killfeed(e); UI.rosterChanged(); break;
     }
     case 'spawn': {
-      if (!p) break; p.x = p.tx = e.x; p.y = p.ty = e.y; p.vx = p.vy = p.tvx = p.tvy = 0; p.tsnap = now(); p.alive = true; p.hp = 100; p.wid = e.wid; p.ammo = e.ammo; p.uses = 0; p.spawnT = .45; p.swing = null; p.nextAtk = 0; p.evT = now(); p.lastHitBy = null; p.sq = 1; p.sqv = 0;
+      if (!p) break; p.x = p.tx = e.x; p.y = p.ty = e.y; p.vx = p.vy = p.tvx = p.tvy = 0; p.tsnap = now(); p.alive = true; p.hp = maxHp(); p.wid = e.wid; p.ammo = e.ammo; p.uses = 0; p.spawnT = .45; p.swing = null; p.nextAtk = 0; p.evT = now(); p.lastHitBy = null; p.sq = 1; p.sqv = 0;
       FX.ring(e.x, e.y, 60, rgba(p.color, .9), 3, .4); FX.ink(e.x, e.y + 10, 8, p.color, .5); FX.dustPuff(e.x, e.y + HH, 8, 1);
       if (p.id === G.myId) { UI.hudWeapon(true); if (G.phase === 'countdown') UI.reveal(weaponOf(p)); } UI.rosterChanged(); break;
     }
@@ -1875,7 +1893,7 @@ const UI = {
     tap('#bCopyCode', () => this.copy(G.code, '#bCopyCode'));
     tap('#bCopyLink', () => this.copy(location.origin + location.pathname + '?join=' + G.code, '#bCopyLink'));
     tap('#bBotMinus', () => { G.botsWanted = Math.max(0, G.botsWanted - 1); syncBots(); this.renderPause(); });
-    tap('#bBotPlus', () => { G.botsWanted = Math.min(7, G.botsWanted + 1); syncBots(); this.renderPause(); });
+    tap('#bBotPlus', () => { G.botsWanted = Math.min(G.botCap != null ? G.botCap : 7, G.botsWanted + 1); syncBots(); this.renderPause(); });
     this.weaponsChanged();
   },
   /* character / colour picker */
@@ -1947,7 +1965,7 @@ const UI = {
         $('#wcPips').innerHTML = `<small style="font-size:12px;color:var(--ink-soft);font-weight:700">${w.type === 'melee' ? (w.id === '_fists' ? 'shove · slide' : 'swing · slide' + (w.deflect ? ' · deflects bullets' : '')) : 'unlimited'}</small>`;
       }
     }
-    $('#wcHp').style.width = (me.alive ? me.hp : 0) + '%';
+    $('#wcHp').style.width = (me.alive ? clamp(me.hp / maxHp() * 100, 0, 100) : 0) + '%';
   },
   hurt() { const el = $('#wcard'); el.animate([{ transform: 'translateX(-50%) rotate(-2deg)' }, { transform: 'translateX(-50%) rotate(2deg)' }, { transform: 'translateX(-50%)' }], { duration: 220 }); },
   banner(big, small, dur = 1.6) { if (G.demo) return; const b = $('#banner'); b.className = 'banner'; void b.offsetWidth; b.innerHTML = `<span class="big">${esc(big)}</span>${small ? `<span class="small">${small}</span>` : ''}`; b.className = 'banner show'; clearTimeout(this._bt); this._bt = setTimeout(() => { b.className = 'banner out'; }, dur * 1000); },
@@ -1997,7 +2015,7 @@ function tick(dt) {
     hostRules();
     if (!G.offline) {
       if (G.outbox.length) { broadcast({ t: 'e', e: G.outbox }); G.outbox = []; }
-      Net.snapT += dt; if (Net.snapT >= .05) { Net.snapT = 0; broadcast({ t: 's', p: [...G.players.values()].map(p => [p.id, Math.round(p.x), Math.round(p.y), Math.round(p.vx), Math.round(p.vy), Math.round(p.aim * 1000), p.face, p.hp, p.alive ? 1 : 0, p.wid, p.ammo, p.score, p.grounded ? 1 : 0, p.aiming ? 1 : 0, p.status || {}, p.mag ?? null, Math.max(0,(p.reloadEnd||0)-now())]) }); }
+      Net.snapT += dt; if (Net.snapT >= .05) { Net.snapT = 0; sendSnapshots(); }
       for (const [k, c] of Net.conns) { const p = G.players.get(c.pid); if (p && now() - p.lastSeen > 15) hostDrop(c.conn); }
     } else G.outbox = [];
   } else if (G.mode === 'play' && Net.hostConn) {
@@ -2005,6 +2023,16 @@ function tick(dt) {
     Net.pingT += dt; if (Net.pingT > 2) { Net.pingT = 0; netSendHost({ t: 'ping', ts: performance.now() }); }
     if (now() - Net.lastRecv > 9) lostConnection('Lost connection to the host.');
   }
+}
+function snapRow(p) { return [p.id, Math.round(p.x), Math.round(p.y), Math.round(p.vx), Math.round(p.vy), Math.round(p.aim * 1000), p.face, p.hp, p.alive ? 1 : 0, p.wid, p.ammo, p.score, p.grounded ? 1 : 0, p.aiming ? 1 : 0, p.status || {}, p.mag ?? null, Math.max(0, (p.reloadEnd || 0) - now())]; }
+/* Interest management: small rooms get everyone every snapshot; crowded rooms send far-away
+   players to each client at a quarter of the rate (staggered so the load is even). */
+function sendSnapshots() {
+  const all = [...G.players.values()]; if (all.length <= 14) { broadcast({ t: 's', p: all.map(snapRow) }); return; }
+  Net.snapN = (Net.snapN || 0) + 1; const rows = all.map(snapRow);
+  for (const c of Net.conns.values()) { const me = G.players.get(c.pid); const out = [];
+    for (let i = 0; i < all.length; i++) { const p = all[i]; const near = !me || p === me || (Math.abs(p.x - me.x) < 1500 && Math.abs(p.y - me.y) < 1000); if (near || (Net.snapN + i) % 4 === 0) out.push(rows[i]); }
+    netSend(c.conn, { t: 's', p: out }); }
 }
 function frame(ts) {
   const dt = Math.min(.1, (ts - lastFrame) / 1000); lastFrame = ts;
@@ -2026,6 +2054,9 @@ window.render_game_to_text = () => JSON.stringify({
 
 </script>
 <script src="expansion.js"></script>
+<script src="world.js"></script>
+<script src="build.js"></script>
+<script src="modes.js"></script>
 <script>
 /* ---------- boot ---------- */
 (async function boot() {

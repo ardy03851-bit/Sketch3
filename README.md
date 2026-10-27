@@ -161,7 +161,7 @@ The sticks float: they appear under your thumb wherever you put it, so there is 
 2. **Countdown** — a new map is drawn, everybody spawns, everybody is given **one random weapon** from the `weapons` folder (weighted by each weapon's `weight`).
 3. **Fight** — 100 hp each. Guns have the ammo their script gives them; when it runs out you are down to **Fists** (a weak shove). There are no pickups and no abilities.
 4. Falling off the map kills you. If someone knocked you off in the last few seconds, they get the credit.
-5. **Sudden death** — if the round lasts 60 seconds, "the ink dries" and everyone loses a little health every half second until somebody wins.
+5. **Sudden death** — if the round lasts 60 seconds, "the ink dries" and everyone loses a little health every half second until somebody wins. (Health, round time and sudden death can all be changed in **Rules & customisation**, see below.)
 6. The last one alive scores a point. First to the target (3, 5 or 10) is champion, then scores reset and it starts again.
 
 ---
@@ -172,6 +172,8 @@ The sticks float: they appear under your thumb wherever you put it, so there is 
 2. Put a PNG in it, ideally named like the folder: `weapons/shotgun/shotgun.png`.
 3. Put a script in it named like the folder: `weapons/shotgun/shotgun.js`.
 4. Refresh the game. The weapon is in the random pool.
+
+You never need to touch `index.html`. On GitHub Pages the game asks GitHub for the whole repository tree in one request (cached for 10 minutes), so every folder in `weapons/` is found automatically. Running `python3 tools/make-manifest.py` also refreshes `weapons/manifest.json`, the fallback used when GitHub can't be reached.
 
 Name matching is forgiving: if there is no `shotgun.js`/`shotgun.png`, the first `.js`/`.png` inside the folder is used. Missing script → default gun stats. Missing PNG → the no-texture square.
 
@@ -449,7 +451,7 @@ Everything in this section lives in `expansion.js`, loaded after the core script
 | Mode | Map | Notes |
 |---|---|---|
 | Classic arena | 1600 × 1000, whole map on screen | Original rules, 60 s rounds |
-| The Big Wilds (expedition) | 3600 × 1600, follow camera | 150 s rounds, minimap, off-screen enemy arrows, supply crates, a storm wall that closes in from both sides |
+| The Big Wilds (expedition) | the classic map ×4 (or ×6 / ×9), follow camera | 150 s rounds, minimap, off-screen arrows, supply crates, Tool Box, teams, War mode, up to 100 bots; optional storm wall |
 
 Pick the mode and atmosphere in *Practice vs bots* or when hosting a room. Online rooms send the mode and biome to every player.
 
@@ -491,7 +493,7 @@ All optional. Unknown fields are ignored, so older weapon scripts keep working.
 | `pull: { radius, force }` | Black-hole pull while flying |
 | `pullToShooter`, `grapple` | Harpoon: drag the target to you, or yourself to the wall |
 | `returns`, `hideWhileFlying` | Boomerang behaviour |
-| `magazine`, `reloadTime`, `spinUp`, `burst: { count, gap }` | Magazine and reload (press R or tap the weapon card), minigun spin-up, burst fire |
+| `magazine`, `reloadTime`, `spinUp`, `burst: { count, delay }` | Magazine and reload (press R or tap the weapon card), minigun spin-up, burst fire |
 | `moveSpeed` | Run speed multiplier while held |
 | `combo`, `arc`, `shockwave`, `lifesteal` | Melee: combo chain multipliers, `arc: 360` spin attacks, ground shockwave, heal on hit |
 | `sound: { type }` | `rocket`, `thump`, `laser`, `zap`, `flame`, `whoosh`, `bubble`, `freeze`, ... |
@@ -505,3 +507,68 @@ Adaptive mode starts from a guess based on the device (cores, memory, screen siz
 ### Hosting without folder listings
 
 Run `python3 tools/make-manifest.py` after adding weapons or characters. It writes `weapons/manifest.json` and `char/manifest.json`, which the game reads on hosts like Netlify or Vercel.
+
+
+---
+
+## Rules, teams, War mode and the Tool Box
+
+Code for this section lives in `build.js` (building, digging, the Tool Box) and `modes.js` (rules, teams, War mode, bot crowds). Both wrap core functions, the same way `expansion.js` does.
+
+### Rules & customisation
+
+Open **Rules & customisation** on the Practice or Host screen. Your choices are saved in a cookie and sent to everyone in the room.
+
+| Option | Choices |
+|---|---|
+| Health | 100, 200, 300, 500, 1000 (longer rounds) |
+| Round time | Auto, 1, 2, 3, 5, 10 minutes |
+| Sudden death | On, or Off (when the timer ends, whoever has the most health wins) |
+| Supply drops | Normal, Lots, Off |
+| Starting weapon | Random for each player, Same for everyone, Fists + drops |
+| Bot skill | Easy, Normal, Hard |
+| Map size (Big Wilds) | 4×, 6× or 9× the classic arena |
+| Bot crowd (Big Wilds) | 10 to 100 bots |
+| Teams (Big Wilds) | Free for all, 2, 3 or 4 teams, with bots, real players or both |
+| Friendly fire | Off or On |
+| War mode, War lives, Build phase | see below |
+| Storm wall | Off (default) or On |
+
+### The Big Wilds
+
+This is the classic map style, just much bigger (4× the area by default). There's no shrinking map unless you turn the storm wall on. A follow camera, minimap and off-screen arrows help you find people.
+
+### Teams
+
+Teams are balanced automatically: real players are spread out first, then bots fill in. Each team spawns on its own side. Team colours show as a ring under each player, the colour of their name tag, and the score chips at the top. The last team standing wins the round, and the first team to the target wins the match. You can switch teams on or off from the pause menu.
+
+### War mode
+
+War mode is a Big Wilds sub-mode with 2 to 4 teams:
+
+- Each team has a flag and base on its part of the map.
+- **Build phase**: for the first 20, 30 or 60 seconds nobody can be hurt. Everyone gets the **build kit**: planks, beams, stone, metal, glass, light bulbs, springs, TNT, plus dig and fill. Bots build little lean-to forts with bulbs around their flag.
+- After that it's a fight. Dead players respawn at their base while the team still has **lives** (shown in the team chips).
+- Press **B** at any time in War mode to switch between your weapon and the build kit. **1-0** picks a piece, **Q/E** or the mouse wheel rotates it, and clicking places it.
+- The host can end War mode, or start it, from the pause menu at any time. The room keeps going with the new rules from the next round.
+
+### The Tool Box
+
+The Tool Box is a weapon (`weapons/toolbox/`) that only appears in The Big Wilds, in about half of the matches (`roundChance: 0.5`). In those matches one is guaranteed to drop in a crate. It works like the build kit, with 40 materials per life. Pieces need support: anything not connected to the ground falls and breaks with physics. TNT chain-explodes, and springs bounce you.
+
+### Many bots
+
+Up to 100 bots can play in The Big Wilds. Bots far from any real player think at half rate and only check line of sight to their few closest targets. In big rooms, far-away players are sent to each client at a quarter of the rate. Name tags, props, pieces and players outside the camera are not drawn. The scoreboard shows the top 8 and you.
+
+### New weapons
+
+Blunderbuss, Scribble SMG, Triple Tap, Derringer, Crossbow, Longbow, Nail Gun, Ink Blotter, Mortar Tube, Sticky Mine, Firework Launcher, Ray Pistol, Plasma Caster, Hornet Hive, Snowball Cannon, Acid Spitter, Hand Cannon, Ricochet Rifle, Saw Launcher, Confetti Cannon, Lumber Axe, Spear, Baseball Bat, Twin Daggers, Morning Star, Frying Pan, Ink Saber, Pickaxe and the Tool Box. That makes 52 weapons in total.
+
+Extra weapon fields used by the build system:
+
+| Field | Meaning |
+|---|---|
+| `tool: true`, `tools: [...]`, `materials` | Makes the weapon a build tool with these pieces and this many materials |
+| `modes: ["expedition"]` | Only appears in these modes |
+| `roundChance` | Fraction of matches the weapon is available in (one drop is guaranteed in those matches) |
+| `propDamage` | Damage multiplier against built pieces |
